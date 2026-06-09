@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include <map>
 #include <termios.h>
 #include <unistd.h>
 #include <chrono>
@@ -211,12 +212,61 @@ string generateAiHint(const Question *q)
     return content.empty() ? "  [AI] No hint could be generated right now." : content;
 }
 
+class DiagnosticAgent
+{
+public:
+    int totalQuestions = 0;
+    int correctAnswers = 0;
+    int wrongAnswers = 0;
+    int hintsUsed = 0;
+    long long totalResponseMs = 0;
+    map<string, int> incorrectCategoryFrequency;
+
+    void recordAnswer(long long responseMs, bool isCorrect, const string &topic, bool usedHint)
+    {
+        ++totalQuestions;
+        totalResponseMs += responseMs;
+        if (isCorrect) ++correctAnswers; else ++wrongAnswers;
+        if (usedHint) ++hintsUsed;
+        if (!topic.empty() && !isCorrect)
+            incorrectCategoryFrequency[topic]++;
+    }
+
+    void printSummary(const string &name)
+    {
+        cout << "\n╔══════════════════════════════════════════════════════╗" << endl;
+        cout << "║            DIAGNOSTIC AGENT ANALYTICS               ║" << endl;
+        cout << "╚══════════════════════════════════════════════════════╝" << endl;
+        cout << "  User          : " << name << endl;
+        cout << "  Questions     : " << totalQuestions << endl;
+        cout << "  Correct       : " << correctAnswers << endl;
+        cout << "  Wrong         : " << wrongAnswers << endl;
+        cout << "  Hints Used    : " << hintsUsed << endl;
+        cout << "  Avg Response  : " << (totalQuestions ? (totalResponseMs / totalQuestions) : 0) << " ms" << endl;
+        cout << "  Weak Patterns  :" << endl;
+        if (incorrectCategoryFrequency.empty())
+            cout << "    - No repeated weak areas detected yet." << endl;
+        else
+        {
+            int rank = 1;
+            for (const auto &entry : incorrectCategoryFrequency)
+            {
+                cout << "    " << rank++ << ". " << entry.first
+                     << " (" << entry.second << " incorrect attempts)" << endl;
+            }
+        }
+        cout << "  Insight       : " << (wrongAnswers == 0 ? "Excellent precision. Keep the pace!" : "Focus on slower or repeated weak topics for next time.") << endl;
+        cout << "  Payload Ready : Diagnostic profile compiled for demo review." << endl;
+    }
+};
+
 class Student
 {
 public:
     string name;
     int score;
     vector<string> weakTopics;
+    DiagnosticAgent diagnostics;
 
     Student(string n)
     {
@@ -280,6 +330,7 @@ public:
         cout << "║" << endl;
         cout << "╚══════════════════════════════════════════════════════╝" << endl;
         showRoadmap();
+        diagnostics.printSummary(name);
 
         if (!weakTopics.empty())
         {
@@ -406,10 +457,12 @@ public:
     int askWithTimer(Question *q, Student &student)
     {
         q->show();
+        auto questionStart = chrono::steady_clock::now();
         cout << "\n  Controls: [A/B/C/D] Answer | HINT = AI clue | X = Stop Quiz" << endl;
 
         auto start = chrono::steady_clock::now();
         char userAns = ' ';
+        bool usedHint = false;
 
         while (true)
         {
@@ -438,6 +491,7 @@ public:
 
                 if (lower == "hint")
                 {
+                    usedHint = true;
                     cout << "\n  Asking AI for a helpful hint...\n";
                     string aiHint = generateAiHint(q);
                     cout << "\n  AI Hint:\n" << aiHint << endl;
@@ -467,9 +521,12 @@ public:
             this_thread::sleep_for(chrono::milliseconds(200));
         }
 
+        auto responseMs = chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - questionStart).count();
         cout << "\r  Your Answer: " << userAns << "                              " << endl;
 
         string ans(1, userAns);
+        bool isCorrect = (ans == q->answer);
+        student.diagnostics.recordAnswer(responseMs, isCorrect, q->hint.empty() ? q->text : q->hint, usedHint);
         if (ans == q->answer)
         {
             cout << "  >> CORRECT! Well done!" << endl;
