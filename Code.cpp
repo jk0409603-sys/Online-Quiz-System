@@ -126,20 +126,12 @@ string extractAiText(const string &body)
     return content;
 }
 
-string getMaskedPassword()
+string getMaskedPassword(const string &prompt = "  Password: ")
 {
-    struct termios oldt, newt;
-    string password;
-
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= static_cast<unsigned int>(~ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
-    getline(cin, password);
-
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    cout << endl;
+    char *raw = getpass(prompt.c_str());
+    if (!raw)
+        return "";
+    string password(raw);
     return password;
 }
 
@@ -925,7 +917,6 @@ int main()
             cout << "\n ======= STUDENT LOGIN =======" << endl;
             cout << "  Username: ";
             getline(cin, username);
-            cout << "  Password: ";
             password = getMaskedPassword();
 
             if (fh.loginUser(username, password))
@@ -1048,7 +1039,6 @@ int main()
             cout << "\n ======= ADMIN LOGIN =======" << endl;
             cout << "  Username: ";
             getline(cin, username);
-            cout << "  Password: ";
             password = getMaskedPassword();
 
             if (username == ADMIN_USER && password == ADMIN_PASS)
@@ -1123,10 +1113,8 @@ int main()
             }
             else
             {
-                cout << "  Password: ";
                 pass1 = getMaskedPassword();
-                cout << "  Confirm : ";
-                pass2 = getMaskedPassword();
+                pass2 = getMaskedPassword("  Confirm : ");
 
                 if (pass1 != pass2)
                 {
