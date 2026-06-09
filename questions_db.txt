@@ -1,0 +1,36 @@
+Python Programming|Which symbol is used for comments in Python?|//|/*|#|--|C|Comments
+Python Programming|Which keyword is used to define a function?|func|def|define|fun|B|Functions
+Python Programming|What does len('hello') return?|4|5|6|error|B|Strings
+Python Programming|Which is a correct list in Python?|(1,2,3)|{1,2,3}|[1,2,3]|<1,2,3>|C|Lists
+Python Programming|What is the output of print(2 ** 3)?|6|8|9|5|B|Operators
+Python Programming|What does Python use for indentation?|tabs|spaces|braces|commas|B|Syntax
+Python Programming|Which function prints text in Python?|read()|print()|input()|write()|B|Output
+Mathematics|What is the square root of 144?|10|11|12|13|C|Square roots
+Mathematics|What is 15% of 200?|20|25|30|35|C|Percentages
+Mathematics|What is 9 x 8?|63|72|81|64|B|Multiplication
+Mathematics|What is the approximate value of Pi?|3.14|2.17|1.73|3.41|A|Constants
+Mathematics|What is 100 divided by 4?|20|25|30|40|B|Division
+Mathematics|What is 7 + 8?|13|14|15|16|B|Addition
+Mathematics|What is 12 - 5?|5|6|7|8|C|Subtraction
+Programming Basics|What does OOP stand for?|Object Only Programming|Object Oriented Programming|Open Object Program|None|B|OOP
+Programming Basics|What is used for single line comment in C++?|//|/*|#|--|A|Comments
+Programming Basics|What is a variable?|A function|A loop|A place to store data|A class|C|Variables
+Programming Basics|What is the size of integer in bytes?|1|2|4|8|C|Data types
+Programming Basics|What is used for output in C++?|print|cout|printf only|scanf|B|Input/Output
+Programming Basics|How many values does Boolean have?|1|2|3|4|B|Booleans
+Programming Basics|What is an array?|A single variable|A collection of same-type values|A function|A loop|B|Arrays
+Programming Basics|What is the return type of main() in C++?|void|string|int|float|C|Functions
+Calculus|What is the derivative of x^2?|x|2x|x^2|2|B|Derivatives
+Calculus|What is the derivative of a constant?|1|0|Constant|x|B|Rules
+Calculus|What is the derivative of sin(x)?|cos(x)|-cos(x)|sin(x)|-sin(x)|A|Trigonometry
+Calculus|What is the derivative of e^x?|e|e^x|x*e^x|1|B|Exponential functions
+Calculus|What is the integral of 1/x?|x|ln|x^2|x^2|B|Integration
+Calculus|What is the limit of 1/x as x tends to infinity?|1|infinity|0|-1|C|Limits
+Calculus|What is the integral of cos(x)?|cos(x)|-sin(x)|sin(x)|-cos(x)|C|Integration
+English|What type of word is 'Book'?|Verb|Adjective|Noun|Adverb|C|Parts of speech
+English|What is the plural of 'Child'?|Childs|Childes|Children|Childrens|C|Grammar
+English|What is a synonym of 'Happy'?|Sad|Joyful|Angry|Tired|B|Vocabulary
+English|What tense is 'She is eating'?|Past|Future|Present Continuous|Simple Present|C|Tenses
+English|What type of word is 'Beautiful'?|Noun|Verb|Adverb|Adjective|D|Adjectives
+English|What is the antonym of 'Ancient'?|Old|Modern|Historic|Classic|B|Vocabulary
+English|What is a Verb?|Action/state word|Describing word|Naming word|Connecting word|A|Grammar
