@@ -8,8 +8,10 @@ This project combines:
 - clean object-oriented C++ architecture
 - dynamic question loading from a text database
 - interactive timed quizzes
-- user authentication and result history
-- a polished terminal interface suitable for demo presentations
+- AI-powered hints and personalized study roadmaps
+- user authentication, result history, and score charts
+- robust input validation for a stable demo experience
+- a polished terminal interface suitable for live presentations
 
 It is built to be simple to run, easy to extend, and impressive in live demonstrations.
 
@@ -25,6 +27,9 @@ It is built to be simple to run, easy to extend, and impressive in live demonstr
 - Dynamic quiz loading from `questions_db.txt`
 - 30-second timed question rounds
 - Score calculation, grading, and result persistence
+- AI-generated hints for specific questions without revealing the answer
+- AI-generated personalized study roadmaps from weak topics
+- Past 5 quiz score chart for performance tracking
 - Professional boxed terminal UI for a modern feel
 
 ## 🧱 Project Structure
@@ -33,12 +38,13 @@ It is built to be simple to run, easy to extend, and impressive in live demonstr
 - `questions_db.txt` – Dynamic question database
 - `users.txt` – Registered user accounts
 - `results.txt` – Quiz performance records
+- `history.txt` – User score history and weak-topic tracking
 
 ## ⚙️ Quick Start
 
 ### 1. Compile
 ```bash
-g++ -std=c++17 Code.cpp -o quiz_app
+g++ -std=c++17 Code.cpp -o quiz_app -lssl -lcrypto -lz
 ```
 
 ### 2. Run
@@ -46,12 +52,13 @@ g++ -std=c++17 Code.cpp -o quiz_app
 ./quiz_app
 ```
 
-## 🏆 What Makes It Hackathon-Ready
+## 🏆 Why This Can Score 10/10
 
-- Fast setup and minimal dependencies
-- Easy-to-understand codebase for judges and reviewers
-- Strong demonstration of C++ programming, file handling, and OOP design
-- Practical real-world use case: interactive learning and assessment
+- Clear demo story: students answer, get AI help, and receive personalized feedback
+- Strong technical depth: C++ OOP, file I/O, timers, AI API integration, and input safety
+- Excellent presentation value: polished terminal UI, charts, and real-time feedback
+- Practical real-world impact: learning support, revision planning, and performance tracking
+- Easy to explain in a 3-minute demo: login → quiz → AI hint → roadmap → history chart
 
 ## 💡 Future Enhancements
 

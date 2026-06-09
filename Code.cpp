@@ -11,13 +11,118 @@
 #include <chrono>
 #include <thread>
 #include <iomanip>
+#include <limits>
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "httplib.h"
 
 using namespace std;
+
+class Question;
 
 void clearScreen()
 {
     cout << "\033[2J\033[H";
     cout.flush();
+}
+
+string generateAiRoadmap(const string &studentName, const vector<string> &weakTopics)
+{
+    const char *apiKey = getenv("GROQ_API_KEY");
+    if (!apiKey || string(apiKey).empty())
+        return "  [AI] No GROQ_API_KEY found. Set it with: export GROQ_API_KEY=your_key";
+
+    string topics;
+    for (size_t i = 0; i < weakTopics.size(); ++i)
+    {
+        if (i) topics += ", ";
+        topics += weakTopics[i];
+    }
+
+    string prompt = "You are a friendly tutor. Create a short personalized study roadmap for " + studentName +
+                    " based on these weak topics/questions: " + topics +
+                    ". Give 5 bullet points with simple actions and a motivational closing sentence.";
+
+    string jsonBody = "{\"model\":\"llama-3.1-8b-instant\",\"messages\":[{\"role\":\"system\",\"content\":\"You are a helpful study coach.\"},{\"role\":\"user\",\"content\":\"" + prompt + "\"}],\"temperature\":0.7}";
+
+    httplib::Client cli("https://api.groq.com");
+    cli.set_default_headers({{"Authorization", string("Bearer ") + apiKey}, {"Content-Type", "application/json"}});
+
+    auto res = cli.Post("/openai/v1/chat/completions", jsonBody, "application/json");
+
+    if (!res || res->status != 200)
+        return "  [AI] Groq API request failed. Check your API key and network connection.";
+
+    string body = res->body;
+
+    size_t contentPos = body.find("\"content\":\"");
+    if (contentPos == string::npos)
+        return "  [AI] No usable response received from Groq API.";
+
+    contentPos += 12;
+    string content;
+    for (size_t i = contentPos; i < body.size(); ++i)
+    {
+        if (body[i] == '\\' && i + 1 < body.size())
+        {
+            if (body[i + 1] == 'n') content += '\n';
+            else if (body[i + 1] == 't') content += '\t';
+            else if (body[i + 1] == '"') content += '"';
+            else if (body[i + 1] == '\\') content += '\\';
+            else content += body[i + 1];
+            ++i;
+        }
+        else if (body[i] == '"')
+        {
+            break;
+        }
+        else
+        {
+            content += body[i];
+        }
+    }
+
+    if (content.empty())
+        return "  [AI] No usable response received from Groq API.";
+
+    return content;
+}
+
+string toLowerCopy(string text)
+{
+    transform(text.begin(), text.end(), text.begin(), [](unsigned char c)
+              { return static_cast<char>(tolower(c)); });
+    return text;
+}
+
+string extractAiText(const string &body)
+{
+    size_t contentPos = body.find("\"content\":\"");
+    if (contentPos == string::npos)
+        return "";
+
+    contentPos += 12;
+    string content;
+    for (size_t i = contentPos; i < body.size(); ++i)
+    {
+        if (body[i] == '\\' && i + 1 < body.size())
+        {
+            if (body[i + 1] == 'n') content += '\n';
+            else if (body[i + 1] == 't') content += '\t';
+            else if (body[i + 1] == '"') content += '"';
+            else if (body[i + 1] == '\\') content += '\\';
+            else content += body[i + 1];
+            ++i;
+        }
+        else if (body[i] == '"')
+        {
+            break;
+        }
+        else
+        {
+            content += body[i];
+        }
+    }
+    return content;
 }
 
 string getMaskedPassword()
@@ -81,6 +186,30 @@ public:
         cout << "+--------------------------------------------------+" << endl;
     }
 };
+
+string generateAiHint(const Question *q)
+{
+    const char *apiKey = getenv("GROQ_API_KEY");
+    if (!apiKey || string(apiKey).empty())
+        return "  [AI] No GROQ_API_KEY found. Set it with: export GROQ_API_KEY=your_key";
+
+    string prompt = "You are a clever tutor. Give one short, helpful hint for this multiple-choice question without revealing the correct answer. "
+                    "Question: " + q->text + "\n"
+                    "Options: A) " + q->optA + ", B) " + q->optB + ", C) " + q->optC + ", D) " + q->optD + "\n"
+                    "Do not say the answer, do not mention the correct option, and keep it concise.";
+
+    string jsonBody = "{\"model\":\"llama-3.1-8b-instant\",\"messages\":[{\"role\":\"system\",\"content\":\"You are a helpful quiz coach.\"},{\"role\":\"user\",\"content\":\"" + prompt + "\"}],\"temperature\":0.7}";
+
+    httplib::Client cli("https://api.groq.com");
+    cli.set_default_headers({{"Authorization", string("Bearer ") + apiKey}, {"Content-Type", "application/json"}});
+
+    auto res = cli.Post("/openai/v1/chat/completions", jsonBody, "application/json");
+    if (!res || res->status != 200)
+        return "  [AI] Hint request failed. Check your API key and internet connection.";
+
+    string content = extractAiText(res->body);
+    return content.empty() ? "  [AI] No hint could be generated right now." : content;
+}
 
 class Student
 {
@@ -151,6 +280,14 @@ public:
         cout << "║" << endl;
         cout << "╚══════════════════════════════════════════════════════╝" << endl;
         showRoadmap();
+
+        if (!weakTopics.empty())
+        {
+            cout << "\n  Generating AI study roadmap..." << endl;
+            string aiRoadmap = generateAiRoadmap(name, weakTopics);
+            cout << "\n  AI Study Roadmap\n  -----------------\n";
+            cout << aiRoadmap << endl;
+        }
 
         cout << "\n  Press ENTER to return to menu...";
         cin.ignore();
@@ -269,7 +406,7 @@ public:
     int askWithTimer(Question *q, Student &student)
     {
         q->show();
-        cout << "\n  Controls: [A/B/C/D] Answer | X = Stop Quiz" << endl;
+        cout << "\n  Controls: [A/B/C/D] Answer | HINT = AI clue | X = Stop Quiz" << endl;
 
         auto start = chrono::steady_clock::now();
         char userAns = ' ';
@@ -293,7 +430,27 @@ public:
             if (cin.peek() != EOF)
             {
                 char ch;
+                string extra;
                 cin >> ch;
+                getline(cin, extra);
+                string input = string(1, ch) + extra;
+                string lower = toLowerCopy(input);
+
+                if (lower == "hint")
+                {
+                    cout << "\n  Asking AI for a helpful hint...\n";
+                    string aiHint = generateAiHint(q);
+                    cout << "\n  AI Hint:\n" << aiHint << endl;
+                    cout << "\n  Press ENTER to continue...";
+                    cin.get();
+                    clearScreen();
+                    q->show();
+                    cout << "\n  Controls: [A/B/C/D] Answer | HINT = AI clue | X = Stop Quiz" << endl;
+                    cout << "\r  [Time: " << (30 - static_cast<int>(chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - start).count())) << "s] Your Answer (A/B/C/D): _   ";
+                    cout.flush();
+                    continue;
+                }
+
                 ch = static_cast<char>(toupper(static_cast<unsigned char>(ch)));
                 if (ch >= 'A' && ch <= 'D')
                 {
@@ -383,6 +540,80 @@ public:
         }
 
         student.showResult(count);
+    }
+};
+
+class PerformanceHistory
+{
+public:
+    void appendResult(const string &username, const string &quiz, int score, int total, const vector<string> &weakTopics)
+    {
+        ofstream file("history.txt", ios::app);
+        if (!file.is_open())
+            return;
+
+        time_t now = time(nullptr);
+        char dateBuf[64];
+        strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%d %H:%M", localtime(&now));
+
+        file << username << "|" << quiz << "|" << score << "|" << total << "|"
+             << fixed << setprecision(1) << (100.0f * score / total) << "|" << dateBuf << "|";
+        for (size_t i = 0; i < weakTopics.size(); ++i)
+        {
+            if (i) file << ",";
+            file << weakTopics[i];
+        }
+        file << "\n";
+        file.close();
+    }
+
+    void showRecentChart(const string &username)
+    {
+        ifstream file("history.txt");
+        if (!file.is_open())
+        {
+            cout << "\n  No history found yet.\n";
+            return;
+        }
+
+        vector<pair<int, string>> scores;
+        string line;
+        while (getline(file, line))
+        {
+            if (line.empty()) continue;
+            size_t p1 = line.find('|');
+            size_t p2 = line.find('|', p1 + 1);
+            size_t p3 = line.find('|', p2 + 1);
+            size_t p4 = line.find('|', p3 + 1);
+            size_t p5 = line.find('|', p4 + 1);
+            if (p1 == string::npos || p5 == string::npos) continue;
+            if (line.substr(0, p1) != username) continue;
+            int score = stoi(line.substr(p2 + 1, p3 - p2 - 1));
+            int total = stoi(line.substr(p3 + 1, p4 - p3 - 1));
+            int pct = static_cast<int>((100.0f * score) / total);
+            scores.push_back({pct, line.substr(p1 + 1, p2 - p1 - 1)});
+        }
+
+        if (scores.empty())
+        {
+            cout << "\n  No quiz history for you yet.\n";
+            return;
+        }
+
+        reverse(scores.begin(), scores.end());
+        if (scores.size() > 5) scores.resize(5);
+
+        cout << "\n  ===== YOUR LAST 5 QUIZ SCORES =====\n";
+        int maxPct = 0;
+        for (const auto &entry : scores) if (entry.first > maxPct) maxPct = entry.first;
+        for (const auto &entry : scores)
+        {
+            int bars = (entry.first * 30) / (maxPct > 0 ? maxPct : 100);
+            cout << "  " << entry.second << " | ";
+            for (int i = 0; i < bars; ++i) cout << "█";
+            for (int i = bars; i < 30; ++i) cout << "-";
+            cout << " " << entry.first << "%\n";
+        }
     }
 };
 
@@ -581,6 +812,7 @@ int main()
 {
 
     FileHandler fh;
+    PerformanceHistory history;
 
     Quiz pythonQuiz("Python Programming");
     pythonQuiz.loadQuestionsFromFile("questions_db.txt", "Python Programming");
@@ -610,14 +842,25 @@ int main()
     int mainChoice;
     do
     {
-        cout << "\n ======= MAIN MENU =======" << endl;
-        cout << " 1. Student Login" << endl;
-        cout << " 2. Admin Login" << endl;
-        cout << " 3. Sign Up" << endl;
-        cout << " 4. Exit" << endl;
-        cout << " Enter choice: ";
-        cin >> mainChoice;
-        cin.ignore();
+        while (true)
+        {
+            cout << "\n ======= MAIN MENU =======" << endl;
+            cout << " 1. Student Login" << endl;
+            cout << " 2. Admin Login" << endl;
+            cout << " 3. Sign Up" << endl;
+            cout << " 4. Exit" << endl;
+            cout << " Enter choice: ";
+            if (!(cin >> mainChoice))
+            {
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << "  Invalid input. Please enter a number.\n";
+                continue;
+            }
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            if (mainChoice >= 1 && mainChoice <= 4) break;
+            cout << "  Invalid choice! Please enter 1 to 4.\n";
+        }
 
         if (mainChoice == 1)
         {
@@ -648,53 +891,84 @@ int main()
                     cout << "\n ========================================" << endl;
                     cout << "        ONLINE QUIZ SYSTEM              " << endl;
                     cout << " ========================================" << endl;
-                    cout << "\n ======= STUDENT MENU =======" << endl;
-                    cout << " 1. Python Programming  (" << pythonQuiz.count << " Q)" << endl;
-                    cout << " 2. Mathematics         (" << mathQuiz.count << " Q)" << endl;
-                    cout << " 3. Programming Basics  (" << progQuiz.count << " Q)" << endl;
-                    cout << " 4. Calculus            (" << calcQuiz.count << " Q)" << endl;
-                    cout << " 5. English             (" << engQuiz.count << " Q)" << endl;
-                    cout << " 6. My Results" << endl;
-                    cout << " 7. Logout" << endl;
-                    cout << " Enter choice: ";
-                    cin >> choice;
-                    cin.ignore();
+                    while (true)
+                    {
+                        cout << "\n ======= STUDENT MENU =======" << endl;
+                        cout << " 1. Python Programming  (" << pythonQuiz.count << " Q)" << endl;
+                        cout << " 2. Mathematics         (" << mathQuiz.count << " Q)" << endl;
+                        cout << " 3. Programming Basics  (" << progQuiz.count << " Q)" << endl;
+                        cout << " 4. Calculus            (" << calcQuiz.count << " Q)" << endl;
+                        cout << " 5. English             (" << engQuiz.count << " Q)" << endl;
+                        cout << " 6. My Results" << endl;
+                        cout << " 7. History Chart" << endl;
+                        cout << " 8. Logout" << endl;
+                        cout << " Enter choice: ";
+                        if (!(cin >> choice))
+                        {
+                            cin.clear();
+                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                            cout << "  Invalid input. Please enter a number.\n";
+                            continue;
+                        }
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        if (choice >= 1 && choice <= 8) break;
+                        cout << "  Invalid choice! Please enter 1 to 8.\n";
+                    }
 
                     if (choice == 1)
                     {
                         pythonQuiz.start(student);
                         if (!pythonQuiz.stopped)
+                        {
                             fh.saveResult(username, "Python Programming", student.score, pythonQuiz.count);
+                            history.appendResult(username, "Python Programming", student.score, pythonQuiz.count, student.weakTopics);
+                        }
                     }
                     else if (choice == 2)
                     {
                         mathQuiz.start(student);
                         if (!mathQuiz.stopped)
+                        {
                             fh.saveResult(username, "Mathematics", student.score, mathQuiz.count);
+                            history.appendResult(username, "Mathematics", student.score, mathQuiz.count, student.weakTopics);
+                        }
                     }
                     else if (choice == 3)
                     {
                         progQuiz.start(student);
                         if (!progQuiz.stopped)
+                        {
                             fh.saveResult(username, "Programming Basics", student.score, progQuiz.count);
+                            history.appendResult(username, "Programming Basics", student.score, progQuiz.count, student.weakTopics);
+                        }
                     }
                     else if (choice == 4)
                     {
                         calcQuiz.start(student);
                         if (!calcQuiz.stopped)
+                        {
                             fh.saveResult(username, "Calculus", student.score, calcQuiz.count);
+                            history.appendResult(username, "Calculus", student.score, calcQuiz.count, student.weakTopics);
+                        }
                     }
                     else if (choice == 5)
                     {
                         engQuiz.start(student);
                         if (!engQuiz.stopped)
+                        {
                             fh.saveResult(username, "English", student.score, engQuiz.count);
+                            history.appendResult(username, "English", student.score, engQuiz.count, student.weakTopics);
+                        }
                     }
                     else if (choice == 6)
                     {
                         fh.showMyResults(username);
                     }
                     else if (choice == 7)
+                    {
+                        history.showRecentChart(username);
+                    }
+                    else if (choice == 8)
                     {
                         clearScreen();
                         cout << "\n  You have been logged out!\n";
@@ -704,7 +978,7 @@ int main()
                         cout << "  Invalid choice!\n";
                     }
 
-                } while (choice != 7);
+                } while (choice != 8);
             }
             else
             {
@@ -731,13 +1005,24 @@ int main()
                     cout << " ========================================" << endl;
                     cout << "          Welcome, Admin!               " << endl;
                     cout << " ========================================" << endl;
-                    cout << "\n ======= ADMIN MENU =======" << endl;
-                    cout << " 1. View All Users" << endl;
-                    cout << " 2. View All Results" << endl;
-                    cout << " 3. Logout" << endl;
-                    cout << " Enter choice: ";
-                    cin >> adminChoice;
-                    cin.ignore();
+                    while (true)
+                    {
+                        cout << "\n ======= ADMIN MENU =======" << endl;
+                        cout << " 1. View All Users" << endl;
+                        cout << " 2. View All Results" << endl;
+                        cout << " 3. Logout" << endl;
+                        cout << " Enter choice: ";
+                        if (!(cin >> adminChoice))
+                        {
+                            cin.clear();
+                            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                            cout << "  Invalid input. Please enter a number.\n";
+                            continue;
+                        }
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        if (adminChoice >= 1 && adminChoice <= 3) break;
+                        cout << "  Invalid choice! Please enter 1 to 3.\n";
+                    }
 
                     if (adminChoice == 1)
                     {
