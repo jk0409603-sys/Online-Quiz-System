@@ -13,8 +13,7 @@
 #include <thread>
 #include <iomanip>
 #include <limits>
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-#include "httplib.h"
+#include <cctype>
 
 using namespace std;
 
@@ -28,64 +27,23 @@ void clearScreen()
 
 string generateAiRoadmap(const string &studentName, const vector<string> &weakTopics)
 {
-    const char *apiKey = getenv("GROQ_API_KEY");
-    if (!apiKey || string(apiKey).empty())
-        return "  [AI] No GROQ_API_KEY found. Set it with: export GROQ_API_KEY=your_key";
-
-    string topics;
-    for (size_t i = 0; i < weakTopics.size(); ++i)
+    string roadmap = "  Offline study roadmap for " + studentName + ":\n";
+    if (weakTopics.empty())
     {
-        if (i) topics += ", ";
-        topics += weakTopics[i];
+        roadmap += "  - Review mixed practice questions and revisit your notes.\n";
+        roadmap += "  - Solve 5 short quizzes on different topics to build confidence.\n";
+        roadmap += "  - Keep a small mistake log and review it every week.\n";
+        roadmap += "  - Stay consistent: 15 minutes of revision daily beats cramming.\n";
+        return roadmap;
     }
 
-    string prompt = "You are a friendly tutor. Create a short personalized study roadmap for " + studentName +
-                    " based on these weak topics/questions: " + topics +
-                    ". Give 5 bullet points with simple actions and a motivational closing sentence.";
-
-    string jsonBody = "{\"model\":\"llama-3.1-8b-instant\",\"messages\":[{\"role\":\"system\",\"content\":\"You are a helpful study coach.\"},{\"role\":\"user\",\"content\":\"" + prompt + "\"}],\"temperature\":0.7}";
-
-    httplib::Client cli("https://api.groq.com");
-    cli.set_default_headers({{"Authorization", string("Bearer ") + apiKey}, {"Content-Type", "application/json"}});
-
-    auto res = cli.Post("/openai/v1/chat/completions", jsonBody, "application/json");
-
-    if (!res || res->status != 200)
-        return "  [AI] Groq API request failed. Check your API key and network connection.";
-
-    string body = res->body;
-
-    size_t contentPos = body.find("\"content\":\"");
-    if (contentPos == string::npos)
-        return "  [AI] No usable response received from Groq API.";
-
-    contentPos += 12;
-    string content;
-    for (size_t i = contentPos; i < body.size(); ++i)
+    for (const string &topic : weakTopics)
     {
-        if (body[i] == '\\' && i + 1 < body.size())
-        {
-            if (body[i + 1] == 'n') content += '\n';
-            else if (body[i + 1] == 't') content += '\t';
-            else if (body[i + 1] == '"') content += '"';
-            else if (body[i + 1] == '\\') content += '\\';
-            else content += body[i + 1];
-            ++i;
-        }
-        else if (body[i] == '"')
-        {
-            break;
-        }
-        else
-        {
-            content += body[i];
-        }
+        roadmap += "  - Review " + topic + " with 3 practice questions and one short summary note.\n";
     }
-
-    if (content.empty())
-        return "  [AI] No usable response received from Groq API.";
-
-    return content;
+    roadmap += "  - Reattempt the same quiz tomorrow to confirm improvement.\n";
+    roadmap += "  - Keep practicing calmly; small daily steps lead to strong results.\n";
+    return roadmap;
 }
 
 string toLowerCopy(string text)
@@ -128,11 +86,70 @@ string extractAiText(const string &body)
 
 string getMaskedPassword(const string &prompt = "  Password: ")
 {
-    char *raw = getpass(prompt.c_str());
-    if (!raw)
-        return "";
-    string password(raw);
+    struct termios oldt, newt;
+    string password;
+
+    if (tcgetattr(STDIN_FILENO, &oldt) == 0)
+    {
+        newt = oldt;
+        newt.c_lflag &= static_cast<unsigned int>(~ECHO);
+        if (tcsetattr(STDIN_FILENO, TCSANOW, &newt) == 0)
+        {
+            cout << prompt;
+            cout.flush();
+
+            char ch;
+            while (cin.get(ch) && ch != '\n' && ch != '\r')
+            {
+                if (ch == 127 || ch == 8)
+                {
+                    if (!password.empty())
+                    {
+                        password.pop_back();
+                        cout << "\b \b";
+                        cout.flush();
+                    }
+                }
+                else
+                {
+                    password.push_back(ch);
+                    cout << '*';
+                    cout.flush();
+                }
+            }
+
+            cout << '\n';
+            tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+            return password;
+        }
+    }
+
+    cout << prompt;
+    cout.flush();
+    getline(cin, password);
     return password;
+}
+
+bool isStrongPassword(const string &password)
+{
+    if (password.length() < 8)
+        return false;
+
+    bool hasLetter = false;
+    bool hasDigit = false;
+    bool hasSpecial = false;
+
+    for (unsigned char ch : password)
+    {
+        if (isalpha(ch))
+            hasLetter = true;
+        else if (isdigit(ch))
+            hasDigit = true;
+        else
+            hasSpecial = true;
+    }
+
+    return hasLetter && hasDigit && hasSpecial;
 }
 
 class Question
@@ -182,26 +199,15 @@ public:
 
 string generateAiHint(const Question *q)
 {
-    const char *apiKey = getenv("GROQ_API_KEY");
-    if (!apiKey || string(apiKey).empty())
-        return "  [AI] No GROQ_API_KEY found. Set it with: export GROQ_API_KEY=your_key";
+    if (!q) return "  [Offline] No question data available.";
 
-    string prompt = "You are a clever tutor. Give one short, helpful hint for this multiple-choice question without revealing the correct answer. "
-                    "Question: " + q->text + "\n"
-                    "Options: A) " + q->optA + ", B) " + q->optB + ", C) " + q->optC + ", D) " + q->optD + "\n"
-                    "Do not say the answer, do not mention the correct option, and keep it concise.";
+    if (!q->hint.empty())
+        return "  [Offline Hint] " + q->hint;
 
-    string jsonBody = "{\"model\":\"llama-3.1-8b-instant\",\"messages\":[{\"role\":\"system\",\"content\":\"You are a helpful quiz coach.\"},{\"role\":\"user\",\"content\":\"" + prompt + "\"}],\"temperature\":0.7}";
-
-    httplib::Client cli("https://api.groq.com");
-    cli.set_default_headers({{"Authorization", string("Bearer ") + apiKey}, {"Content-Type", "application/json"}});
-
-    auto res = cli.Post("/openai/v1/chat/completions", jsonBody, "application/json");
-    if (!res || res->status != 200)
-        return "  [AI] Hint request failed. Check your API key and internet connection.";
-
-    string content = extractAiText(res->body);
-    return content.empty() ? "  [AI] No hint could be generated right now." : content;
+    string hint = "  [Offline Hint] Check the wording carefully and eliminate the options that do not fit the question statement.";
+    if (q->optA.find("true") != string::npos || q->optA.find("false") != string::npos)
+        hint += " Look for the strongest factual statement.";
+    return hint;
 }
 
 class DiagnosticAgent
@@ -326,9 +332,9 @@ public:
 
         if (!weakTopics.empty())
         {
-            cout << "\n  Generating AI study roadmap..." << endl;
+            cout << "\n  Generating study roadmap..." << endl;
             string aiRoadmap = generateAiRoadmap(name, weakTopics);
-            cout << "\n  AI Study Roadmap\n  -----------------\n";
+            cout << "\n  Study Roadmap\n  -------------\n";
             cout << aiRoadmap << endl;
         }
 
@@ -484,9 +490,9 @@ public:
                 if (lower == "hint")
                 {
                     usedHint = true;
-                    cout << "\n  Asking AI for a helpful hint...\n";
+                    cout << "\n  Generating an offline hint...\n";
                     string aiHint = generateAiHint(q);
-                    cout << "\n  AI Hint:\n" << aiHint << endl;
+                    cout << "\n  Hint:\n" << aiHint << endl;
                     cout << "\n  Press ENTER to continue...";
                     cin.get();
                     clearScreen();
@@ -1120,9 +1126,9 @@ int main()
                 {
                     cout << "  Passwords do not match!\n";
                 }
-                else if (pass1.length() < 5)
+                else if (!isStrongPassword(pass1))
                 {
-                    cout << "  Password must be at least 5 characters!\n";
+                    cout << "  Password must be at least 8 characters and include letters, numbers, and one special symbol!\n";
                 }
                 else
                 {
