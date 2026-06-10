@@ -103,11 +103,24 @@ It is built to be simple to run, easy to extend, and impressive in live demonstr
 
 ## 🧱 Project Structure
 
-- `src/Code.cpp` – Core application logic and quiz flow
+```text
+Online-Quiz-System/
+├── .gitignore
+├── README.md
+├── data/
+│   └── questions_db.txt
+└── src/
+    ├── main.cpp
+    ├── history.txt
+    └── [Any helper header/cpp files]
+```
+
+- `src/main.cpp` – Core application logic and quiz flow
 - `data/questions_db.txt` – Large question database with 1,000 questions per category and difficulty labels
-- `users.txt` – Registered user accounts
-- `results.txt` – Quiz performance records
-- `history.txt` – User score history and weak-topic tracking
+- `src/history.txt` – Stored quiz history for the app
+- `src/[Any helper header/cpp files]` – Optional supporting source files
+
+> Note: if you move `questions_db.txt` into the `data/` folder, make sure your C++ file opens it using `"data/questions_db.txt"` so the loader can find it correctly.
 
 ## ⚙️ How to Run
 
@@ -119,7 +132,7 @@ cd Online-Quiz-System
 
 2. Compile the C++ source:
 ```bash
-g++ -std=c++17 src/Code.cpp -o quiz
+g++ -std=c++17 src/main.cpp -o quiz
 ```
 
 3. Run the application:
