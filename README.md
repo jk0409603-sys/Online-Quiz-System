@@ -55,13 +55,6 @@ This project is designed as a live demo-ready learning assistant where students 
 
 ## 4. Video Demo Embedded Link
 
-> Add your YouTube / Loom / Drive demo link here:
->
-> https://your-demo-link-here
-
-If you want, replace this placeholder with your actual video link before submission.
-
----
 
 ## ✨ Judge-Facing Showcase
 
