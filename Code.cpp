@@ -7,8 +7,12 @@
 #include <ctime>
 #include <algorithm>
 #include <map>
+#ifdef _WIN32
+#include <conio.h>
+#else
 #include <termios.h>
 #include <unistd.h>
+#endif
 #include <chrono>
 #include <thread>
 #include <iomanip>
@@ -86,6 +90,41 @@ string extractAiText(const string &body)
 
 string getMaskedPassword(const string &prompt = "  Password: ")
 {
+#ifdef _WIN32
+    cout << prompt;
+    cout.flush();
+
+    string password;
+    char ch;
+
+    while (true)
+    {
+        ch = _getch();
+
+        if (ch == '\r' || ch == '\n')
+        {
+            cout << '\n';
+            break;
+        }
+
+        if (ch == 8 || ch == 127)
+        {
+            if (!password.empty())
+            {
+                password.pop_back();
+                cout << "\b \b";
+                cout.flush();
+            }
+            continue;
+        }
+
+        password.push_back(ch);
+        cout << '*';
+        cout.flush();
+    }
+
+    return password;
+#else
     struct termios oldt, newt;
     string password;
 
@@ -128,6 +167,7 @@ string getMaskedPassword(const string &prompt = "  Password: ")
     cout.flush();
     getline(cin, password);
     return password;
+#endif
 }
 
 bool isStrongPassword(const string &password)
