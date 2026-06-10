@@ -103,22 +103,28 @@ It is built to be simple to run, easy to extend, and impressive in live demonstr
 
 ## 🧱 Project Structure
 
-- `Code.cpp` – Core application logic and quiz flow
-- `questions_db.txt` – Large question database with 1,000 questions per category and difficulty labels
+- `src/Code.cpp` – Core application logic and quiz flow
+- `data/questions_db.txt` – Large question database with 1,000 questions per category and difficulty labels
 - `users.txt` – Registered user accounts
 - `results.txt` – Quiz performance records
 - `history.txt` – User score history and weak-topic tracking
 
-## ⚙️ Quick Start
+## ⚙️ How to Run
 
-### 1. Compile
+1. Clone the repository:
 ```bash
-g++ -std=c++17 Code.cpp -o quiz_app -lssl -lcrypto -lz
+git clone <your-repo-url>
+cd Online-Quiz-System
 ```
 
-### 2. Run
+2. Compile the C++ source:
 ```bash
-./quiz_app
+g++ -std=c++17 src/Code.cpp -o quiz
+```
+
+3. Run the application:
+```bash
+./quiz
 ```
 
 ## 🏆 Why Judges Like This Project
