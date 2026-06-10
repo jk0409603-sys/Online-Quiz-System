@@ -1,2 +1,3 @@
 wajiha imran|Python Programming|0|7|0.0|2026-06-10 07:17|Output,Operators,Syntax,Strings,Comments,Lists,Functions
 ali|Python Programming|0|7|0.0|2026-06-10 12:52|Strings,Output,Syntax,Comments,Functions,Lists,Operators
+Wajiha Imran|Python Programming|0|7|0.0|2026-06-10 13:05|Strings,Syntax,Output,Comments,Lists,Operators,Functions

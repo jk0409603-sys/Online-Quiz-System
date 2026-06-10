@@ -155,9 +155,9 @@ bool isStrongPassword(const string &password)
 class Question
 {
 public:
-    string text, optA, optB, optC, optD, answer, hint;
+    string text, optA, optB, optC, optD, answer, hint, difficulty;
 
-    Question(string t, string a, string b, string c, string d, string ans, string h = "")
+    Question(string t, string a, string b, string c, string d, string ans, string h = "", string diff = "Mixed")
     {
         text = t;
         optA = a;
@@ -166,6 +166,7 @@ public:
         optD = d;
         answer = ans;
         hint = h;
+        difficulty = diff.empty() ? "Mixed" : diff;
     }
 
     void show()
@@ -187,6 +188,12 @@ public:
         cout << "|  D) " << optD;
         for (size_t i = optD.length(); i < 46; ++i) cout << ' ';
         cout << "|" << endl;
+        if (!difficulty.empty())
+        {
+            cout << "|  Difficulty: " << difficulty;
+            for (size_t i = difficulty.length() + 13; i < 47; ++i) cout << ' ';
+            cout << "|" << endl;
+        }
         if (!hint.empty())
         {
             cout << "|  Hint: " << hint;
@@ -349,7 +356,7 @@ class Quiz
 {
 public:
     string title;
-    Question *questions[10];
+    vector<Question*> questions;
     int count;
     bool stopped;
 
@@ -358,32 +365,26 @@ public:
         title = t;
         count = 0;
         stopped = false;
-        for (int i = 0; i < 10; ++i) questions[i] = nullptr;
     }
 
     ~Quiz()
     {
-        for (int i = 0; i < count; ++i)
-        {
-            delete questions[i];
-            questions[i] = nullptr;
-        }
-        count = 0;
+        clearQuestions();
     }
 
     void addQuestion(Question *q)
     {
-        if (count < 10)
-            questions[count++] = q;
+        questions.push_back(q);
+        ++count;
     }
 
     void clearQuestions()
     {
-        for (int i = 0; i < count; ++i)
+        for (Question *q : questions)
         {
-            delete questions[i];
-            questions[i] = nullptr;
+            delete q;
         }
+        questions.clear();
         count = 0;
     }
 
@@ -399,7 +400,7 @@ public:
         }
 
         string line;
-        while (getline(file, line) && count < 10)
+        while (getline(file, line))
         {
             if (line.empty())
                 continue;
@@ -417,19 +418,24 @@ public:
             if (!subjectName.empty() && subject != subjectName)
                 continue;
 
-            if (parts.size() >= 8)
+            Question *q = nullptr;
+            if (parts.size() >= 9)
             {
-                questions[count] = new Question(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
+                q = new Question(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8]);
+            }
+            else if (parts.size() == 8)
+            {
+                q = new Question(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
             }
             else if (parts.size() == 7)
             {
-                questions[count] = new Question(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]);
+                q = new Question(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]);
             }
             else
             {
-                questions[count] = new Question(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]);
+                q = new Question(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]);
             }
-            ++count;
+            if (q) addQuestion(q);
         }
         file.close();
 
