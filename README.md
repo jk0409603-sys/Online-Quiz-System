@@ -53,9 +53,6 @@ This project is designed as a live demo-ready learning assistant where students 
 
 ---
 
-## 4. Video Demo Embedded Link
-
-
 ## ✨ Judge-Facing Showcase
 
 ### What makes the demo impressive
