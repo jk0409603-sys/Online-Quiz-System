@@ -2,9 +2,9 @@
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen) ![C%2B%2B](https://img.shields.io/badge/C%2B%2B-17-blue) ![AI](https://img.shields.io/badge/AI-Groq%20Hint%2FRoadmap-orange)
 
-A professional, terminal-based quiz platform that combines C++ logic, file-driven question banks, and AI-generated study guidance for a polished hackathon demo experience.
+A professional, terminal-based quiz platform that combines C++ logic, file-driven question banks, AI-generated study guidance, and a large question library for a polished hackathon demo experience.
 
-**One-line pitch:** "An AI-assisted quiz system that turns mistakes into personalized learning paths in real time."
+**One-line pitch:** "An AI-assisted quiz system with 1,000 questions per category, difficulty levels, and personalized learning paths in real time."
 
 ---
 
@@ -46,7 +46,8 @@ This project is designed as a live demo-ready learning assistant where students 
 | Feature | Description | Highlight |
 |---|---|---|
 | Randomization | Question order is shuffled for each session | ✅ Engaging replay value |
-| File DB | Questions are loaded from `questions_db.txt` | ✅ Easy content expansion |
+| Large Question Bank | 1,000 questions per category in `questions_db.txt` | ✅ Massive practice coverage |
+| Difficulty Levels | Easy, Medium, and Hard question tags | ✅ Better learning progression |
 | Personalized Roadmaps | AI-generated guidance based on weak topics | ✅ Strong judge appeal |
 | Timed Quizzes | 30-second rounds with real-time feedback | ✅ Competitive UX |
 | Diagnostics | Tracks answer speed, incorrect patterns, and hint usage | ✅ Analytics-ready |
@@ -58,7 +59,7 @@ This project is designed as a live demo-ready learning assistant where students 
 ### What makes the demo impressive
 - The user answers in real time, gets an AI hint on demand, and receives a study roadmap from weak topics.
 - The terminal UI feels polished, interactive, and demo-ready for live judging.
-- The system combines education + AI + analytics in one compact C++ application.
+- The system combines education + AI + analytics in one compact C++ application, now backed by a large question bank and difficulty-aware content.
 
 ### Demo Script (30 seconds)
 1. Launch the app and show the login flow.
@@ -72,7 +73,7 @@ This project is designed as a live demo-ready learning assistant where students 
 
 This project combines:
 - clean object-oriented C++ architecture
-- dynamic question loading from a text database
+- dynamic question loading from a large text database
 - interactive timed quizzes
 - AI-powered hints and personalized study roadmaps
 - user authentication, result history, and score charts
@@ -91,6 +92,8 @@ It is built to be simple to run, easy to extend, and impressive in live demonstr
   - Calculus
   - English
 - Dynamic quiz loading from `questions_db.txt`
+- 1,000 questions per category for broad practice coverage
+- Difficulty tags: Easy, Medium, Hard
 - 30-second timed question rounds
 - Score calculation, grading, and result persistence
 - AI-generated hints for specific questions without revealing the answer
@@ -101,7 +104,7 @@ It is built to be simple to run, easy to extend, and impressive in live demonstr
 ## 🧱 Project Structure
 
 - `Code.cpp` – Core application logic and quiz flow
-- `questions_db.txt` – Dynamic question database
+- `questions_db.txt` – Large question database with 1,000 questions per category and difficulty labels
 - `users.txt` – Registered user accounts
 - `results.txt` – Quiz performance records
 - `history.txt` – User score history and weak-topic tracking
@@ -141,7 +144,7 @@ This project combines education, AI, and software engineering in one compact pac
 ## 💡 Future Enhancements
 
 - Add leaderboard support
-- Introduce difficulty levels
+- Add category-based difficulty filters
 - Add timed categories and random question pools
 - Build a GUI version for desktop or web
 
