@@ -436,7 +436,7 @@ public:
         count = 0;
     }
 
-    void loadQuestionsFromFile(const string &filename = "questions_db.txt", const string &subjectName = "")
+    void loadQuestionsFromFile(const string &filename = "data/questions_db.txt", const string &subjectName = "")
     {
         clearQuestions();
 
@@ -924,19 +924,19 @@ int main()
     PerformanceHistory history;
 
     Quiz pythonQuiz("Python Programming");
-    pythonQuiz.loadQuestionsFromFile("questions_db.txt", "Python Programming");
+    pythonQuiz.loadQuestionsFromFile("data/questions_db.txt", "Python Programming");
 
     Quiz mathQuiz("Mathematics");
-    mathQuiz.loadQuestionsFromFile("questions_db.txt", "Mathematics");
+    mathQuiz.loadQuestionsFromFile("data/questions_db.txt", "Mathematics");
 
     Quiz progQuiz("Programming Basics");
-    progQuiz.loadQuestionsFromFile("questions_db.txt", "Programming Basics");
+    progQuiz.loadQuestionsFromFile("data/questions_db.txt", "Programming Basics");
 
     Quiz calcQuiz("Calculus");
-    calcQuiz.loadQuestionsFromFile("questions_db.txt", "Calculus");
+    calcQuiz.loadQuestionsFromFile("data/questions_db.txt", "Calculus");
 
     Quiz engQuiz("English");
-    engQuiz.loadQuestionsFromFile("questions_db.txt", "English");
+    engQuiz.loadQuestionsFromFile("data/questions_db.txt", "English");
 
     clearScreen();
     cout << "\n ========================================" << endl;
