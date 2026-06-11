@@ -1,3 +1,7 @@
 quiz_app
 users.txt
 results.txt
+.env
+__pycache__/
+*.pyc
+.pytest_cache/

@@ -7,18 +7,15 @@
 #include <ctime>
 #include <algorithm>
 #include <map>
-#ifdef _WIN32
-#include <conio.h>
-#else
 #include <termios.h>
 #include <unistd.h>
-#endif
 #include <chrono>
 #include <thread>
 #include <iomanip>
 #include <limits>
 #include <cctype>
-
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "httplib.h"
 
 using namespace std;
 
@@ -32,23 +29,64 @@ void clearScreen()
 
 string generateAiRoadmap(const string &studentName, const vector<string> &weakTopics)
 {
-    string roadmap = "  Offline study roadmap for " + studentName + ":\n";
-    if (weakTopics.empty())
+    const char *apiKey = getenv("GROQ_API_KEY");
+    if (!apiKey || string(apiKey).empty())
+        return "  [AI] No GROQ_API_KEY found. Set it with: export GROQ_API_KEY=your_key";
+
+    string topics;
+    for (size_t i = 0; i < weakTopics.size(); ++i)
     {
-        roadmap += "  - Review mixed practice questions and revisit your notes.\n";
-        roadmap += "  - Solve 5 short quizzes on different topics to build confidence.\n";
-        roadmap += "  - Keep a small mistake log and review it every week.\n";
-        roadmap += "  - Stay consistent: 15 minutes of revision daily beats cramming.\n";
-        return roadmap;
+        if (i) topics += ", ";
+        topics += weakTopics[i];
     }
 
-    for (const string &topic : weakTopics)
+    string prompt = "You are a friendly tutor. Create a short personalized study roadmap for " + studentName +
+                    " based on these weak topics/questions: " + topics +
+                    ". Give 5 bullet points with simple actions and a motivational closing sentence.";
+
+    string jsonBody = "{\"model\":\"llama-3.1-8b-instant\",\"messages\":[{\"role\":\"system\",\"content\":\"You are a helpful study coach.\"},{\"role\":\"user\",\"content\":\"" + prompt + "\"}],\"temperature\":0.7}";
+
+    httplib::Client cli("https://api.groq.com");
+    cli.set_default_headers({{"Authorization", string("Bearer ") + apiKey}, {"Content-Type", "application/json"}});
+
+    auto res = cli.Post("/openai/v1/chat/completions", jsonBody, "application/json");
+
+    if (!res || res->status != 200)
+        return "  [AI] Groq API request failed. Check your API key and network connection.";
+
+    string body = res->body;
+
+    size_t contentPos = body.find("\"content\":\"");
+    if (contentPos == string::npos)
+        return "  [AI] No usable response received from Groq API.";
+
+    contentPos += 12;
+    string content;
+    for (size_t i = contentPos; i < body.size(); ++i)
     {
-        roadmap += "  - Review " + topic + " with 3 practice questions and one short summary note.\n";
+        if (body[i] == '\\' && i + 1 < body.size())
+        {
+            if (body[i + 1] == 'n') content += '\n';
+            else if (body[i + 1] == 't') content += '\t';
+            else if (body[i + 1] == '"') content += '"';
+            else if (body[i + 1] == '\\') content += '\\';
+            else content += body[i + 1];
+            ++i;
+        }
+        else if (body[i] == '"')
+        {
+            break;
+        }
+        else
+        {
+            content += body[i];
+        }
     }
-    roadmap += "  - Reattempt the same quiz tomorrow to confirm improvement.\n";
-    roadmap += "  - Keep practicing calmly; small daily steps lead to strong results.\n";
-    return roadmap;
+
+    if (content.empty())
+        return "  [AI] No usable response received from Groq API.";
+
+    return content;
 }
 
 string toLowerCopy(string text)
@@ -89,50 +127,8 @@ string extractAiText(const string &body)
     return content;
 }
 
-
-
-
-  
- 
-
-
 string getMaskedPassword(const string &prompt = "  Password: ")
 {
-#ifdef _WIN32
-    cout << prompt;
-    cout.flush();
-
-    string password;
-    char ch;
-
-    while (true)
-    {
-        ch = _getch();
-
-        if (ch == 13)
-        {
-            cout << '\n';
-            break;
-        }
-        else if (ch == 8 || ch == 127)
-        {
-            if (!password.empty())
-            {
-                password.pop_back();
-                cout << "\b \b";
-                cout.flush();
-            }
-        }
-        else
-        {
-            password.push_back(ch);
-            cout << '*';
-            cout.flush();
-        }
-    }
-
-    return password;
-#else
     struct termios oldt, newt;
     string password;
 
@@ -175,7 +171,6 @@ string getMaskedPassword(const string &prompt = "  Password: ")
     cout.flush();
     getline(cin, password);
     return password;
-#endif
 }
 
 bool isStrongPassword(const string &password)
@@ -203,9 +198,9 @@ bool isStrongPassword(const string &password)
 class Question
 {
 public:
-    string text, optA, optB, optC, optD, answer, hint, difficulty;
+    string text, optA, optB, optC, optD, answer, hint;
 
-    Question(string t, string a, string b, string c, string d, string ans, string h = "", string diff = "Mixed")
+    Question(string t, string a, string b, string c, string d, string ans, string h = "")
     {
         text = t;
         optA = a;
@@ -214,7 +209,6 @@ public:
         optD = d;
         answer = ans;
         hint = h;
-        difficulty = diff.empty() ? "Mixed" : diff;
     }
 
     void show()
@@ -236,12 +230,6 @@ public:
         cout << "|  D) " << optD;
         for (size_t i = optD.length(); i < 46; ++i) cout << ' ';
         cout << "|" << endl;
-        if (!difficulty.empty())
-        {
-            cout << "|  Difficulty: " << difficulty;
-            for (size_t i = difficulty.length() + 13; i < 47; ++i) cout << ' ';
-            cout << "|" << endl;
-        }
         if (!hint.empty())
         {
             cout << "|  Hint: " << hint;
@@ -254,15 +242,26 @@ public:
 
 string generateAiHint(const Question *q)
 {
-    if (!q) return "  [Offline] No question data available.";
+    const char *apiKey = getenv("GROQ_API_KEY");
+    if (!apiKey || string(apiKey).empty())
+        return "  [AI] No GROQ_API_KEY found. Set it with: export GROQ_API_KEY=your_key";
 
-    if (!q->hint.empty())
-        return "  [Offline Hint] " + q->hint;
+    string prompt = "You are a clever tutor. Give one short, helpful hint for this multiple-choice question without revealing the correct answer. "
+                    "Question: " + q->text + "\n"
+                    "Options: A) " + q->optA + ", B) " + q->optB + ", C) " + q->optC + ", D) " + q->optD + "\n"
+                    "Do not say the answer, do not mention the correct option, and keep it concise.";
 
-    string hint = "  [Offline Hint] Check the wording carefully and eliminate the options that do not fit the question statement.";
-    if (q->optA.find("true") != string::npos || q->optA.find("false") != string::npos)
-        hint += " Look for the strongest factual statement.";
-    return hint;
+    string jsonBody = "{\"model\":\"llama-3.1-8b-instant\",\"messages\":[{\"role\":\"system\",\"content\":\"You are a helpful quiz coach.\"},{\"role\":\"user\",\"content\":\"" + prompt + "\"}],\"temperature\":0.7}";
+
+    httplib::Client cli("https://api.groq.com");
+    cli.set_default_headers({{"Authorization", string("Bearer ") + apiKey}, {"Content-Type", "application/json"}});
+
+    auto res = cli.Post("/openai/v1/chat/completions", jsonBody, "application/json");
+    if (!res || res->status != 200)
+        return "  [AI] Hint request failed. Check your API key and internet connection.";
+
+    string content = extractAiText(res->body);
+    return content.empty() ? "  [AI] No hint could be generated right now." : content;
 }
 
 class DiagnosticAgent
@@ -387,9 +386,9 @@ public:
 
         if (!weakTopics.empty())
         {
-            cout << "\n  Generating study roadmap..." << endl;
+            cout << "\n  Generating AI study roadmap..." << endl;
             string aiRoadmap = generateAiRoadmap(name, weakTopics);
-            cout << "\n  Study Roadmap\n  -------------\n";
+            cout << "\n  AI Study Roadmap\n  -----------------\n";
             cout << aiRoadmap << endl;
         }
 
@@ -404,7 +403,7 @@ class Quiz
 {
 public:
     string title;
-    vector<Question*> questions;
+    Question *questions[10];
     int count;
     bool stopped;
 
@@ -413,30 +412,36 @@ public:
         title = t;
         count = 0;
         stopped = false;
+        for (int i = 0; i < 10; ++i) questions[i] = nullptr;
     }
 
     ~Quiz()
     {
-        clearQuestions();
+        for (int i = 0; i < count; ++i)
+        {
+            delete questions[i];
+            questions[i] = nullptr;
+        }
+        count = 0;
     }
 
     void addQuestion(Question *q)
     {
-        questions.push_back(q);
-        ++count;
+        if (count < 10)
+            questions[count++] = q;
     }
 
     void clearQuestions()
     {
-        for (Question *q : questions)
+        for (int i = 0; i < count; ++i)
         {
-            delete q;
+            delete questions[i];
+            questions[i] = nullptr;
         }
-        questions.clear();
         count = 0;
     }
 
-    void loadQuestionsFromFile(const string &filename = "data/questions_db.txt", const string &subjectName = "")
+    void loadQuestionsFromFile(const string &filename = "questions_db.txt", const string &subjectName = "")
     {
         clearQuestions();
 
@@ -448,7 +453,7 @@ public:
         }
 
         string line;
-        while (getline(file, line))
+        while (getline(file, line) && count < 10)
         {
             if (line.empty())
                 continue;
@@ -466,24 +471,19 @@ public:
             if (!subjectName.empty() && subject != subjectName)
                 continue;
 
-            Question *q = nullptr;
-            if (parts.size() >= 9)
+            if (parts.size() >= 8)
             {
-                q = new Question(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8]);
-            }
-            else if (parts.size() == 8)
-            {
-                q = new Question(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
+                questions[count] = new Question(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
             }
             else if (parts.size() == 7)
             {
-                q = new Question(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]);
+                questions[count] = new Question(parts[1], parts[2], parts[3], parts[4], parts[5], parts[6]);
             }
             else
             {
-                q = new Question(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]);
+                questions[count] = new Question(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]);
             }
-            if (q) addQuestion(q);
+            ++count;
         }
         file.close();
 
@@ -544,9 +544,9 @@ public:
                 if (lower == "hint")
                 {
                     usedHint = true;
-                    cout << "\n  Generating an offline hint...\n";
+                    cout << "\n  Asking AI for a helpful hint...\n";
                     string aiHint = generateAiHint(q);
-                    cout << "\n  Hint:\n" << aiHint << endl;
+                    cout << "\n  AI Hint:\n" << aiHint << endl;
                     cout << "\n  Press ENTER to continue...";
                     cin.get();
                     clearScreen();
@@ -924,19 +924,19 @@ int main()
     PerformanceHistory history;
 
     Quiz pythonQuiz("Python Programming");
-    pythonQuiz.loadQuestionsFromFile("data/questions_db.txt", "Python Programming");
+    pythonQuiz.loadQuestionsFromFile("questions_db.txt", "Python Programming");
 
     Quiz mathQuiz("Mathematics");
-    mathQuiz.loadQuestionsFromFile("data/questions_db.txt", "Mathematics");
+    mathQuiz.loadQuestionsFromFile("questions_db.txt", "Mathematics");
 
     Quiz progQuiz("Programming Basics");
-    progQuiz.loadQuestionsFromFile("data/questions_db.txt", "Programming Basics");
+    progQuiz.loadQuestionsFromFile("questions_db.txt", "Programming Basics");
 
     Quiz calcQuiz("Calculus");
-    calcQuiz.loadQuestionsFromFile("data/questions_db.txt", "Calculus");
+    calcQuiz.loadQuestionsFromFile("questions_db.txt", "Calculus");
 
     Quiz engQuiz("English");
-    engQuiz.loadQuestionsFromFile("data/questions_db.txt", "English");
+    engQuiz.loadQuestionsFromFile("questions_db.txt", "English");
 
     clearScreen();
     cout << "\n ========================================" << endl;

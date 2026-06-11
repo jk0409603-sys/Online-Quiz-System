@@ -1,0 +1,1 @@
+This folder contains the HTML front-end for the quiz app.
