@@ -2,6 +2,7 @@ import os
 
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
+from pyngrok import ngrok
 
 from analysis import analyze_answers
 from generate_questions import generate_quiz_questions
@@ -59,4 +60,17 @@ def result():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+    port = int(os.getenv("PORT", 5000))
+
+    try:
+        token = os.getenv("NGROK_AUTH_TOKEN")
+        if token:
+            ngrok.set_auth_token(token)
+
+        public_url = ngrok.connect(port).public_url
+        print(f"Public URL: {public_url}")
+    except Exception as exc:
+        print(f"Ngrok tunnel unavailable: {exc}")
+        print(f"Local URL: http://127.0.0.1:{port}")
+
+    app.run(debug=True, host="0.0.0.0", port=port)
