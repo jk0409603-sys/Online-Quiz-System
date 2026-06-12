@@ -1,64 +1,74 @@
 import os
-
-from flask import Flask, jsonify, render_template, request
+from collections import Counter
+from pathlib import Path
+from dotenv import load_dotenv
+from flask import Flask, jsonify, render_template_string, request
 from flask_cors import CORS
 
-from analysis import analyze_answers
-from generate_questions import generate_quiz_questions
+load_dotenv()
 
+try:
+    from openai import AzureOpenAI
+    _oai_client = AzureOpenAI(
+        api_key=os.getenv("AZURE_OPENAI_KEY", ""),
+        api_version="2024-02-01",
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
+    )
+    OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini")
+    OPENAI_OK = bool(os.getenv("AZURE_OPENAI_KEY"))
+except Exception:
+    _oai_client = None
+    OPENAI_OK = False
 
-app = Flask(__name__, template_folder="templates", static_folder="static")
+try:
+    from azure.ai.textanalytics import TextAnalyticsClient
+    from azure.core.credentials import AzureKeyCredential
+    _lang_client = TextAnalyticsClient(
+        endpoint=os.getenv("AZURE_LANGUAGE_ENDPOINT", ""),
+        credential=AzureKeyCredential(os.getenv("AZURE_LANGUAGE_KEY", "")),
+    )
+    LANGUAGE_OK = bool(os.getenv("AZURE_LANGUAGE_KEY"))
+except Exception:
+    _lang_client = None
+    LANGUAGE_OK = False
+
+app = Flask(__name__)
 CORS(app)
 
+BASE_DIR = Path(__file__).resolve().parent
+DATA_FILE = BASE_DIR / "data" / "questions_db.txt"
+HISTORY_FILE = BASE_DIR / "history.txt"
+RESULTS_FILE = BASE_DIR / "results.txt"
 
 @app.get("/")
 def index():
-    return render_template("index.html")
-
+    return "<h1>Adaptive IT Learning Hub</h1><p>API is running!</p>"
 
 @app.get("/api/health")
 def health():
-    return jsonify({"status": "ok", "service": "online-quiz-system"})
-
+    q = sum(1 for _ in DATA_FILE.open("r", encoding="utf-8")) if DATA_FILE.exists() else 0
+    return jsonify({"status": "ok", "questions": q, "azure_openai": OPENAI_OK, "azure_language": LANGUAGE_OK})
 
 @app.get("/api/demo")
 def demo():
-    return jsonify({"message": "Azure quiz system ready", "focus": "personalized prep"})
+    return jsonify({"message": "Adaptive mode ready: revisit loops, functions, and reasoning before next quiz.", "focus": "Python basics + problem solving", "difficulty": "medium", "source": "fallback"})
 
-
-@app.post("/start")
-def start():
-    data = request.get_json(silent=True) or {}
-    topic = (data.get("topic") or "General Knowledge").strip() or "General Knowledge"
-    level = (data.get("level") or "Beginner").strip() or "Beginner"
-    rounds = max(1, int(data.get("rounds") or 5))
-    count = max(1, int(data.get("count") or 10))
-
-    rounds_payload = []
-    for round_index in range(rounds):
-        rounds_payload.append({
-            "round": round_index + 1,
-            "level": level,
-            "questions": generate_quiz_questions(topic, level=level, count=count),
-        })
-
-    return jsonify({"topic": topic, "level": level, "rounds": rounds_payload})
-
-
-@app.post("/answer")
-def answer():
+@app.post("/api/analyze")
+def analyze():
     data = request.get_json(silent=True) or {}
     answers = data.get("answers", [])
-    feedback = analyze_answers(answers)
-    return jsonify({"feedback": feedback, "answers": answers})
+    text = " ".join(answers).lower()
+    detected = [k for k in ["recursion","loop","function","variable","array","class","algorithm","mathematics","sorting"] if k in text]
+    advice = f"Review these topics: {', '.join(detected)}." if detected else "Keep practising regularly."
+    return jsonify({"weak_topics": detected, "advice": advice, "source": "fallback"})
 
+@app.get("/api/analytics")
+def analytics():
+    question_count = sum(1 for _ in DATA_FILE.open("r", encoding="utf-8")) if DATA_FILE.exists() else 0
+    history_lines = [l.strip() for l in HISTORY_FILE.open("r", encoding="utf-8") if l.strip()] if HISTORY_FILE.exists() else []
+    results_lines = [l.strip() for l in RESULTS_FILE.open("r", encoding="utf-8") if l.strip()] if RESULTS_FILE.exists() else []
+    return jsonify({"sessions": len(history_lines) + len(results_lines), "questions": question_count, "topics": "Python, Loops, Functions"})
 
-@app.get("/result")
-def result():
-    return jsonify({"score": 0, "feedback": "Complete the quiz to see your result."})
-
-
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
