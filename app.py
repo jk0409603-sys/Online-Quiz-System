@@ -63,10 +63,7 @@ if __name__ == "__main__":
     token = os.getenv("NGROK_AUTH_TOKEN")
 
     if not token:
-        raise RuntimeError("Set NGROK_AUTH_TOKEN to start a public ngrok tunnel.")
 
-    ngrok.set_auth_token(token)
-    public_url = ngrok.connect(port).public_url
     print(f"Public URL: {public_url}")
 
     app.run(debug=True, host="0.0.0.0", port=port)
