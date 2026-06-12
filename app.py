@@ -2,7 +2,6 @@ import os
 
 from flask import Flask, jsonify, render_template, request
 from flask_cors import CORS
-from pyngrok import ngrok
 
 from analysis import analyze_answers
 from generate_questions import generate_quiz_questions
