@@ -58,12 +58,7 @@ def result():
     return jsonify({"score": 0, "feedback": "Complete the quiz to see your result."})
 
 
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
-    token = os.getenv("NGROK_AUTH_TOKEN")
 
-    if not token:
-
-    print(f"Public URL: {public_url}")
-
-    app.run(debug=True, host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
