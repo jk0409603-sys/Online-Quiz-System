@@ -61,16 +61,13 @@ def result():
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
+    token = os.getenv("NGROK_AUTH_TOKEN")
 
-    try:
-        token = os.getenv("NGROK_AUTH_TOKEN")
-        if token:
-            ngrok.set_auth_token(token)
+    if not token:
+        raise RuntimeError("Set NGROK_AUTH_TOKEN to start a public ngrok tunnel.")
 
-        public_url = ngrok.connect(port).public_url
-        print(f"Public URL: {public_url}")
-    except Exception as exc:
-        print(f"Ngrok tunnel unavailable: {exc}")
-        print(f"Local URL: http://127.0.0.1:{port}")
+    ngrok.set_auth_token(token)
+    public_url = ngrok.connect(port).public_url
+    print(f"Public URL: {public_url}")
 
     app.run(debug=True, host="0.0.0.0", port=port)
