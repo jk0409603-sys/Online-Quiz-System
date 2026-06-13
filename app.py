@@ -66,7 +66,7 @@ textarea{width:100%;background:#0f172a;color:#eff6ff;border:1px solid #334155;bo
 <div class="card">
 <span class="pill">Adaptive Learning Tool for Pakistani IT Students</span>
 <h1>Adaptive IT Learning Hub <span class="ai-badge">Azure OpenAI + Azure AI Language</span></h1>
-<p class="muted">Built by Wajiha Imran · Bahauddin Zakariya University · 1st Year IT (GPA 4.0) · Built solo in 4 days</p>
+<p class="muted">Built by Wajiha Imran · Bahauddin Zakariya University · BS IT 1st Year (Completed) · GPA 4.0 · Built solo in 4 days</p>
 <div class="score-box">
 <div class="mini"><div class="tag">Problem</div><div id="problemText">Limited access to personalised exam prep</div></div>
 <div class="mini"><div class="tag">AI</div><div id="aiText">Adaptive difficulty + weak-topic insight</div></div>
