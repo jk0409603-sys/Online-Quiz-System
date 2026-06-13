@@ -87,6 +87,43 @@ textarea{width:100%;background:#0f172a;color:#eff6ff;border:1px solid #334155;bo
 </div>
 </div>
 <div class="card">
+  <h2>Start a Quiz</h2>
+  <p class="muted">Choose a subject and difficulty level. Each level has 10 questions.</p>
+  <div id="quizMenu">
+    <div class="grid">
+      <div class="card" style="margin-bottom:0"><h3>🐍 Python</h3>
+        <button class="btn" onclick="startQuiz('Python','Beginner')">Beginner</button>
+        <button class="btn" onclick="startQuiz('Python','Intermediate')">Intermediate</button>
+        <button class="btn" onclick="startQuiz('Python','Advanced')">Advanced</button>
+      </div>
+      <div class="card" style="margin-bottom:0"><h3>💻 Programming Basics</h3>
+        <button class="btn" onclick="startQuiz('Basics','Beginner')">Beginner</button>
+        <button class="btn" onclick="startQuiz('Basics','Intermediate')">Intermediate</button>
+        <button class="btn" onclick="startQuiz('Basics','Advanced')">Advanced</button>
+      </div>
+      <div class="card" style="margin-bottom:0"><h3>➗ Mathematics</h3>
+        <button class="btn" onclick="startQuiz('Math','Beginner')">Beginner</button>
+        <button class="btn" onclick="startQuiz('Math','Intermediate')">Intermediate</button>
+        <button class="btn" onclick="startQuiz('Math','Advanced')">Advanced</button>
+      </div>
+      <div class="card" style="margin-bottom:0"><h3>🗄️ Data Structures</h3>
+        <button class="btn" onclick="startQuiz('DSA','Beginner')">Beginner</button>
+        <button class="btn" onclick="startQuiz('DSA','Intermediate')">Intermediate</button>
+        <button class="btn" onclick="startQuiz('DSA','Advanced')">Advanced</button>
+      </div>
+    </div>
+  </div>
+  <div id="quizBox" style="display:none;margin-top:16px">
+    <h3 id="quizTitle"></h3>
+    <p class="muted" id="quizProgress"></p>
+    <div id="quizQuestion" class="card" style="margin-bottom:12px"></div>
+    <div id="quizOptions"></div>
+    <button class="btn" id="nextBtn" onclick="nextQuestion()" style="margin-top:12px;display:none">Next</button>
+    <div id="quizResult" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<div class="card">
 <h2>Analyse your answers</h2>
 <p class="muted">Paste answers below. Azure AI Language detects your weak topics.</p>
 <textarea id="answersInput" rows="4" placeholder="e.g. I got confused about recursion and loops..."></textarea>
@@ -701,6 +738,217 @@ function showResult() {
     "<p class=\"muted\">" + msg + "</p>" +
     "<button class=\"btn\" onclick=\"document.getElementById('quizMenu').style.display='block';document.getElementById('quizBox').style.display='none'\">Back to Subjects</button>" +
     "<button class=\"btn secondary\" onclick=\"startQuiz('" + currentSubject + "','" + currentLevel + "')\">Retry</button>" +
+    "</div>";
+}
+
+
+var QS={
+  Python:{
+    Beginner:[
+      {q:"What is output of print(2+3)?",o:["5","23","Error","None"],a:0},
+      {q:"Which keyword defines a function?",o:["func","def","function","define"],a:1},
+      {q:"What type is 3.14?",o:["int","str","float","bool"],a:2},
+      {q:"How to create a list?",o:["{}","()","[]","<>"],a:2},
+      {q:"What does len('hello') return?",o:["4","5","6","Error"],a:1},
+      {q:"Comment symbol in Python?",o:["//","#","/*","--"],a:1},
+      {q:"Output of type(True)?",o:["int","bool","str","NoneType"],a:1},
+      {q:"Valid variable name?",o:["2name","my-var","my_var","class"],a:2},
+      {q:"What does print() do?",o:["Input","Output","Define var","None"],a:1},
+      {q:"How to start a for loop?",o:["for i in range:","for(i=0;;)","for i in range(n):","loop i:"],a:2}
+    ],
+    Intermediate:[
+      {q:"What is a lambda?",o:["Class method","Anonymous function","A loop","A module"],a:1},
+      {q:"What does *args do?",o:["Keyword args","Variable positional args","Multiply","None"],a:1},
+      {q:"What is list comprehension?",o:["Copy lists","Create lists concisely","Sort","Search"],a:1},
+      {q:"What does self refer to?",o:["The class","Current instance","A method","A var"],a:1},
+      {q:"Output of [1,2,3][::-1]?",o:["[1,2,3]","[3,2,1]","Error","[]"],a:1},
+      {q:"Module for regex?",o:["re","regex","regexp","match"],a:0},
+      {q:"What does try/except do?",o:["Loop","Handle errors","Define func","Import"],a:1},
+      {q:"What is a dictionary?",o:["Ordered list","Key-value pairs","A set","A tuple"],a:1},
+      {q:"What does import os do?",o:["OS module","Create file","Run program","None"],a:0},
+      {q:"== vs is in Python?",o:["Same","== value, is identity","is value","None"],a:1}
+    ],
+    Advanced:[
+      {q:"What is a generator?",o:["Returns list","Uses yield","Class decorator","Module"],a:1},
+      {q:"What is GIL?",o:["Global Import Lock","Global Interpreter Lock","General Input","None"],a:1},
+      {q:"What does @property do?",o:["Private method","Access method like attribute","Create class","None"],a:1},
+      {q:"What is monkey patching?",o:["Debugging","Modify code at runtime","Design pattern","None"],a:1},
+      {q:"What is __slots__?",o:["Memory optimisation","Error handling","Importing","None"],a:0},
+      {q:"What is defaultdict?",o:["Sort dict","Default for missing keys","Merge dicts","None"],a:1},
+      {q:"What is asyncio?",o:["Multithreading","Async programming","DB access","None"],a:1},
+      {q:"What is a metaclass?",o:["Class of class","Base class","Abstract class","None"],a:0},
+      {q:"What does lru_cache do?",o:["Clear cache","Cache results","Limit recursion","None"],a:1},
+      {q:"Purpose of __init__.py?",o:["Run on import","Mark as package","Both","None"],a:2}
+    ]
+  },
+  Basics:{
+    Beginner:[
+      {q:"What is a variable?",o:["Fixed value","Data container","A function","A loop"],a:1},
+      {q:"What is an algorithm?",o:["A language","Step-by-step solution","A data type","A compiler"],a:1},
+      {q:"What does CPU stand for?",o:["Central Process Unit","Central Processing Unit","Computer Processing","None"],a:1},
+      {q:"What is a compiler?",o:["Translates to machine code","Runs line by line","Stores data","None"],a:0},
+      {q:"What is binary?",o:["Base 10","Base 2","Base 16","None"],a:1},
+      {q:"What is an IDE?",o:["Internet Data Exchange","Integrated Dev Environment","Internal Debug","None"],a:1},
+      {q:"What is a loop?",o:["Store data","Repeat code","Define functions","None"],a:1},
+      {q:"What is a boolean?",o:["A number","True or False","A string","None"],a:1},
+      {q:"What is debugging?",o:["Writing code","Finding and fixing errors","Compiling","None"],a:1},
+      {q:"What is syntax?",o:["Logic of code","Rules of a language","A structure","None"],a:1}
+    ],
+    Intermediate:[
+      {q:"What is recursion?",o:["A loop","Function calling itself","A data type","None"],a:1},
+      {q:"What is OOP?",o:["Object Oriented Programming","Open Output Process","None","Online Output"],a:0},
+      {q:"What is inheritance?",o:["Copying code","Class acquiring properties of another","A loop","None"],a:1},
+      {q:"What is encapsulation?",o:["Hiding internal details","Sharing data","A loop","None"],a:0},
+      {q:"What is polymorphism?",o:["Many forms","A data type","A module","None"],a:0},
+      {q:"What is a stack?",o:["FIFO","LIFO","Random access","None"],a:1},
+      {q:"What is a queue?",o:["LIFO","FIFO","Random","None"],a:1},
+      {q:"What is Big O?",o:["A loop","Algorithm efficiency","A data type","None"],a:1},
+      {q:"What is abstraction?",o:["Hiding complexity","Showing all details","A loop","None"],a:0},
+      {q:"What is a linked list?",o:["Array","Nodes with pointers","A queue","None"],a:1}
+    ],
+    Advanced:[
+      {q:"What is dynamic programming?",o:["Dynamic variables","Solving by subproblems","A language","None"],a:1},
+      {q:"What is a BST?",o:["Left < root < right","Random tree","A graph","None"],a:0},
+      {q:"Time complexity of binary search?",o:["O(n)","O(log n)","O(n2)","O(1)"],a:1},
+      {q:"What is a hash table?",o:["Sorted array","Key-value with hash","A tree","None"],a:1},
+      {q:"What is a graph?",o:["A chart","Nodes connected by edges","A matrix","None"],a:1},
+      {q:"What is Dijkstra used for?",o:["Sorting","Shortest path","Searching","None"],a:1},
+      {q:"What is a deadlock?",o:["A bug","Two processes waiting forever","A loop","None"],a:1},
+      {q:"What is memoisation?",o:["Memory management","Caching expensive calls","Garbage collection","None"],a:1},
+      {q:"What is a semaphore?",o:["A signal","Thread sync tool","A data type","None"],a:1},
+      {q:"Process vs thread?",o:["No difference","Process independent, thread shares memory","Thread independent","None"],a:1}
+    ]
+  },
+  Math:{
+    Beginner:[
+      {q:"What is 15% of 200?",o:["25","30","35","40"],a:1},
+      {q:"Square root of 144?",o:["10","11","12","13"],a:2},
+      {q:"2 to the power of 8?",o:["128","256","512","64"],a:1},
+      {q:"Value of pi?",o:["3.14","2.71","1.61","4.13"],a:0},
+      {q:"What is a prime number?",o:["Divisible by 2","Only by 1 and itself","Even number","None"],a:1},
+      {q:"Mean of 2,4,6,8,10?",o:["5","6","7","8"],a:1},
+      {q:"What is a set?",o:["Ordered collection","Unique unordered elements","A sequence","None"],a:1},
+      {q:"Area of circle r=7?",o:["154","144","164","134"],a:0},
+      {q:"What is a logarithm?",o:["Inverse of exponentiation","A loop","A matrix","None"],a:0},
+      {q:"What is factorial?",o:["Sum of numbers","Product of all integers up to n","A power","None"],a:1}
+    ],
+    Intermediate:[
+      {q:"What is a matrix?",o:["Single number","2D array of numbers","A vector","None"],a:1},
+      {q:"Determinant of [[1,2],[3,4]]?",o:["-2","2","-4","4"],a:0},
+      {q:"Boolean algebra used for?",o:["Statistics","Logic circuits","Calculus","None"],a:1},
+      {q:"What is modular arithmetic?",o:["Division","Remainder after division","Multiplication","None"],a:1},
+      {q:"What is a permutation?",o:["Ordered arrangement","Unordered selection","A set","None"],a:0},
+      {q:"What is a combination?",o:["Ordered selection","Unordered selection","A sequence","None"],a:1},
+      {q:"Pythagorean theorem?",o:["a+b=c","a2+b2=c2","a*b=c","None"],a:1},
+      {q:"What is a derivative?",o:["Area under curve","Rate of change","A constant","None"],a:1},
+      {q:"What is an integral?",o:["Rate of change","Area under curve","A matrix","None"],a:1},
+      {q:"What is probability?",o:["Certainty","Likelihood between 0 and 1","Percentage only","None"],a:1}
+    ],
+    Advanced:[
+      {q:"Big O of bubble sort?",o:["O(n)","O(n log n)","O(n2)","O(1)"],a:2},
+      {q:"Fourier transform used for?",o:["Sorting","Signal analysis","Matrix multiply","None"],a:1},
+      {q:"Linear algebra in ML?",o:["Storing data","Vector and matrix ops","None","Loops"],a:1},
+      {q:"What is gradient descent?",o:["Sorting algorithm","ML optimisation","A structure","None"],a:1},
+      {q:"What is normal distribution?",o:["Uniform spread","Bell curve","Random data","None"],a:1},
+      {q:"What is eigenvalue?",o:["Scalar for linear transform","A matrix","A vector","None"],a:0},
+      {q:"What is entropy?",o:["Energy","Measure of uncertainty","A constant","None"],a:1},
+      {q:"What is Bayes theorem?",o:["Sorting","Update probability with evidence","Matrix ops","None"],a:1},
+      {q:"What is a p-value?",o:["Probability given null hypothesis","A percentage","A constant","None"],a:0},
+      {q:"What is chain rule?",o:["Adding derivatives","Differentiating composites","Integration","None"],a:1}
+    ]
+  },
+  DSA:{
+    Beginner:[
+      {q:"What is an array?",o:["Key-value store","Sequential elements","A tree","None"],a:1},
+      {q:"What is a stack?",o:["FIFO","LIFO","A graph","None"],a:1},
+      {q:"What is a queue?",o:["LIFO","FIFO","Random access","None"],a:1},
+      {q:"Linked list node contains?",o:["Only data","Data and next pointer","Only pointer","None"],a:1},
+      {q:"Index of first array element?",o:["1","0","-1","None"],a:1},
+      {q:"What is a tree?",o:["Linear structure","Hierarchical structure","A graph","None"],a:1},
+      {q:"What is a leaf node?",o:["Root node","No children node","Two children node","None"],a:1},
+      {q:"Operation to add to stack?",o:["enqueue","push","insert","add"],a:1},
+      {q:"Operation to remove from stack?",o:["dequeue","pop","remove","delete"],a:1},
+      {q:"Hash table used for?",o:["Sorting","Fast key-value lookup","Traversal","None"],a:1}
+    ],
+    Intermediate:[
+      {q:"What is a BST?",o:["Random tree","Left < root < right","A graph","None"],a:1},
+      {q:"Time complexity of array access?",o:["O(n)","O(1)","O(log n)","None"],a:1},
+      {q:"What is a heap?",o:["A stack","Priority queue tree","A graph","None"],a:1},
+      {q:"What is DFS?",o:["Depth First Search","Data File System","None","Direct File Search"],a:0},
+      {q:"What is BFS?",o:["Breadth First Search","Binary File System","None","Base File Search"],a:0},
+      {q:"What is doubly linked list?",o:["Single pointer","Next and prev pointers","A tree","None"],a:1},
+      {q:"What is circular queue?",o:["Circle shape","Tail connects to head","A stack","None"],a:1},
+      {q:"What is amortised analysis?",o:["Worst case","Average over operations","Best case","None"],a:1},
+      {q:"What is a trie?",o:["A graph","String prefix tree","A hash table","None"],a:1},
+      {q:"What is priority queue?",o:["Random","Highest priority first","A stack","None"],a:1}
+    ],
+    Advanced:[
+      {q:"What is an AVL tree?",o:["Unbalanced BST","Self-balancing BST","A heap","None"],a:1},
+      {q:"Time complexity of heapify?",o:["O(n)","O(log n)","O(n log n)","O(1)"],a:0},
+      {q:"What is a red-black tree?",o:["Coloured graph","Self-balancing BST with colour rules","A heap","None"],a:1},
+      {q:"Segment tree used for?",o:["Sorting","Range queries","Graph traversal","None"],a:1},
+      {q:"What is a Fenwick tree?",o:["A graph","Binary indexed tree","A heap","None"],a:1},
+      {q:"Time complexity of merge sort?",o:["O(n2)","O(n log n)","O(n)","O(log n)"],a:1},
+      {q:"What is topological sorting?",o:["Sorting numbers","Ordering DAG by dependencies","Tree traversal","None"],a:1},
+      {q:"What is disjoint set?",o:["A graph","Union-Find structure","A tree","None"],a:1},
+      {q:"Quick sort average case?",o:["O(n2)","O(n log n)","O(n)","O(log n)"],a:1},
+      {q:"What is a sparse table?",o:["Empty table","Range minimum queries","A hash table","None"],a:1}
+    ]
+  }
+};
+
+var curSubject="",curLevel="",curIdx=0,curScore=0,curAnswered=false;
+
+function startQuiz(s,l){
+  curSubject=s;curLevel=l;curIdx=0;curScore=0;curAnswered=false;
+  document.getElementById("quizMenu").style.display="none";
+  document.getElementById("quizBox").style.display="block";
+  document.getElementById("quizResult").innerHTML="";
+  showQ();
+}
+
+function showQ(){
+  var q=QS[curSubject][curLevel][curIdx];
+  curAnswered=false;
+  document.getElementById("quizTitle").textContent=curSubject+" — "+curLevel;
+  document.getElementById("quizProgress").textContent="Question "+(curIdx+1)+" of 10 | Score: "+curScore;
+  document.getElementById("quizQuestion").innerHTML="<p style='font-size:16px;margin:0'>"+q.q+"</p>";
+  document.getElementById("nextBtn").style.display="none";
+  document.getElementById("quizOptions").innerHTML=q.o.map(function(opt,i){
+    return "<button class='btn' style='display:block;width:100%;margin-bottom:8px;text-align:left;background:rgba(15,23,42,0.9);border:1px solid #334155' onclick='checkA("+i+")'>"+opt+"</button>";
+  }).join("");
+}
+
+function checkA(sel){
+  if(curAnswered)return;
+  curAnswered=true;
+  var q=QS[curSubject][curLevel][curIdx];
+  var btns=document.getElementById("quizOptions").querySelectorAll("button");
+  btns.forEach(function(btn,i){
+    btn.disabled=true;
+    if(i===q.a)btn.style.background="linear-gradient(135deg,#166534,#15803d)";
+    else if(i===sel&&sel!==q.a)btn.style.background="linear-gradient(135deg,#7f1d1d,#991b1b)";
+  });
+  if(sel===q.a)curScore++;
+  document.getElementById("quizProgress").textContent="Question "+(curIdx+1)+" of 10 | Score: "+curScore;
+  if(curIdx<9){document.getElementById("nextBtn").style.display="inline-block";}
+  else{showRes();}
+}
+
+function nextQuestion(){curIdx++;showQ();}
+
+function showRes(){
+  document.getElementById("nextBtn").style.display="none";
+  var pct=curScore*10;
+  var msg=pct>=80?"Excellent! You are ready!":pct>=50?"Good effort! Keep practising!":"Needs improvement — review the topic!";
+  document.getElementById("quizResult").innerHTML=
+    "<div class='card' style='background:#0f172a;margin-top:12px'>"+
+    "<h3>Quiz Complete!</h3>"+
+    "<p>"+curSubject+" | "+curLevel+"</p>"+
+    "<p style='font-size:28px;font-weight:700'>"+curScore+"/10 ("+pct+"%)</p>"+
+    "<p class='muted'>"+msg+"</p>"+
+    "<button class='btn' onclick='document.getElementById("quizMenu").style.display="block";document.getElementById("quizBox").style.display="none"'>Back to Subjects</button> "+
+    "<button class='btn secondary' onclick='startQuiz(""+curSubject+"",""+curLevel+"")'>Retry</button>"+
     "</div>";
 }
 
