@@ -40,8 +40,6 @@ DATA_FILE = BASE_DIR / "data" / "questions_db.txt"
 HISTORY_FILE = BASE_DIR / "history.txt"
 RESULTS_FILE = BASE_DIR / "results.txt"
 
-@app.get("/")
-
 HTML = """
 <!doctype html><html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
