@@ -112,14 +112,12 @@
     const statusText = document.getElementById('status');
     const authSection = document.getElementById('authSection');
     const dashboardSection = document.getElementById('dashboardSection');
-    const quizSection = document.getElementById('quizSection');
     const questionSection = document.getElementById('questionSection');
     const resultSection = document.getElementById('resultSection');
     const welcomeText = document.getElementById('welcomeText');
     const dashboardSummary = document.getElementById('dashboardSummary');
     const plannerBox = document.getElementById('plannerBox');
     const recentTests = document.getElementById('recentTests');
-    const aiAssistSection = document.getElementById('aiAssistSection');
     const topicInput = document.getElementById('topic');
     const levelSelect = document.getElementById('level');
     const startBtn = document.getElementById('startBtn');
@@ -145,21 +143,32 @@
       statusText.textContent = message;
     }
 
-    function showSection(section) {
-      authSection.classList.toggle('hidden', section !== authSection);
-      dashboardSection.classList.toggle('hidden', section !== dashboardSection);
-      quizSection.classList.toggle('hidden', section !== quizSection);
-      questionSection.classList.toggle('hidden', section !== questionSection);
-      resultSection.classList.toggle('hidden', section !== resultSection);
+    function showDashboard() {
+      authSection.classList.add('hidden');
+      dashboardSection.classList.remove('hidden');
+      questionSection.classList.add('hidden');
+      resultSection.classList.add('hidden');
     }
 
-    function setVisibility({dashboard = false, quiz = false, questions = false, result = false, ai = false}) {
-      authSection.classList.toggle('hidden', dashboard || quiz || questions || result || ai);
-      dashboardSection.classList.toggle('hidden', !dashboard);
-      quizSection.classList.toggle('hidden', !quiz);
-      questionSection.classList.toggle('hidden', !questions);
-      resultSection.classList.toggle('hidden', !result);
-      aiAssistSection.classList.toggle('hidden', !ai);
+    function showQuestions() {
+      authSection.classList.add('hidden');
+      dashboardSection.classList.add('hidden');
+      questionSection.classList.remove('hidden');
+      resultSection.classList.add('hidden');
+    }
+
+    function showResults() {
+      authSection.classList.add('hidden');
+      dashboardSection.classList.add('hidden');
+      questionSection.classList.add('hidden');
+      resultSection.classList.remove('hidden');
+    }
+
+    function showAuth() {
+      authSection.classList.remove('hidden');
+      dashboardSection.classList.add('hidden');
+      questionSection.classList.add('hidden');
+      resultSection.classList.add('hidden');
     }
 
     async function loadDashboard() {
@@ -179,11 +188,10 @@
         `;
         plannerBox.innerHTML = `<div class="card"><h3>Study Planner</h3><p class="muted">${data.planner.recommended_focus}</p><p class="muted">Next step: ${data.planner.next_step}</p></div>`;
         recentTests.innerHTML = `<h3>Recent Tests</h3>${data.recent_tests.length ? data.recent_tests.map(test => `<div class="mini"><div class="tag">${test.topic} • ${test.level}</div><div>${test.score}/${test.max_score} on ${new Date(test.date).toLocaleDateString()}</div><div class="muted">${test.feedback}</div></div>`).join('') : '<p class="muted">No tests taken yet.</p>'}`;
-        setVisibility({dashboard: true, quiz: true, ai: true});
+        showDashboard();
+        setStatus('');
       } catch (err) {
         setStatus(`Dashboard error: ${err.message}`);
-      } finally {
-        if (!dashboardSection.classList.contains('hidden')) setStatus('');
       }
     }
 
@@ -216,8 +224,7 @@
     function logout() {
       username = '';
       localStorage.removeItem('oqs_username');
-      setVisibility({dashboard: false, quiz: false, questions: false, result: false, ai: false});
-      authSection.classList.remove('hidden');
+      showAuth();
       setStatus('Logged out.');
     }
 
@@ -244,9 +251,8 @@
         if (!questions.length) throw new Error('No questions returned.');
         current = 0;
         answers = [];
+        showQuestions();
         setStatus('');
-        questionSection.classList.remove('hidden');
-        resultSection.classList.add('hidden');
         renderQuestion();
       } catch (err) {
         setStatus(`Quiz load failed: ${err.message}`);
@@ -264,7 +270,6 @@
       }
       startQuiz(topic, level);
     };
-
 
     function renderQuestion() {
       const question = questions[current];
@@ -286,8 +291,7 @@
       scoreText.textContent = '';
       feedbackText.textContent = '';
       quizMeta.textContent = `Topic: ${lastTopic} | Level: ${lastLevel}`;
-      resultSection.classList.add('hidden');
-      questionSection.classList.remove('hidden');
+      showQuestions();
       renderQuestion();
     }
 
@@ -330,7 +334,6 @@
         renderQuestion();
         return;
       }
-      questionSection.classList.add('hidden');
       setStatus('Submitting answers...');
       try {
         const res = await fetch('/answer', {
@@ -343,7 +346,7 @@
         quizMeta.textContent = `Topic: ${lastTopic} | Level: ${lastLevel}`;
         scoreText.textContent = `Score: ${score} / ${questions.length}`;
         feedbackText.textContent = data.feedback || 'Great effort!';
-        resultSection.classList.remove('hidden');
+        showResults();
         await loadDashboard();
       } catch (err) {
         setStatus(`Submission failed: ${err.message}`);
@@ -353,7 +356,6 @@
     };
 
     if (username) {
-      authSection.classList.add('hidden');
       loadDashboard();
     }
   </script>
