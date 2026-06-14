@@ -1,5 +1,7 @@
+import json
 import os
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory
@@ -41,6 +43,39 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "data" / "questions_db.txt"
 HISTORY_FILE = BASE_DIR / "history.txt"
 RESULTS_FILE = BASE_DIR / "results.txt"
+USERS_FILE = BASE_DIR / "users.json"
+
+
+def _load_users():
+    if USERS_FILE.exists():
+        try:
+            return json.loads(USERS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
+def _save_users(users):
+    USERS_FILE.write_text(json.dumps(users, indent=2), encoding="utf-8")
+
+
+def _get_user(username):
+    if not username:
+        return None
+    return _load_users().get(username)
+
+
+def _create_user(username, password):
+    users = _load_users()
+    if username in users:
+        return None
+    users[username] = {
+        "username": username,
+        "password": password,
+        "tests": []
+    }
+    _save_users(users)
+    return users[username]
 
 HTML = """
 <!doctype html><html lang="en"><head><meta charset="utf-8"/>
@@ -983,9 +1018,70 @@ def answer():
     data = request.get_json(silent=True) or {}
     answers = data.get("answers", [])
     questions = data.get("questions", [])
+    username = data.get("username")
+    topic = data.get("topic", "")
+    level = data.get("level", "")
     score = sum(1 for q, a in zip(questions, answers) if a == q.get("answer"))
     feedback = analyze_answers(answers)
+    if username:
+        users = _load_users()
+        user = users.get(username)
+        if user is not None:
+            user.setdefault("tests", []).append({
+                "topic": topic,
+                "level": level,
+                "score": score,
+                "max_score": len(questions),
+                "date": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                "feedback": feedback,
+            })
+            _save_users(users)
     return jsonify({"score": score, "feedback": feedback, "answers": answers})
+
+@app.post("/api/signup")
+def signup():
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip()
+    password = (data.get("password") or "").strip()
+    if not username or not password:
+        return jsonify({"error": "Username and password are required."}), 400
+    if _get_user(username):
+        return jsonify({"error": "Username already exists."}), 400
+    user = _create_user(username, password)
+    return jsonify({"username": user["username"], "tests": user["tests"], "message": "Account created."})
+
+@app.post("/api/login")
+def login():
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip()
+    password = (data.get("password") or "").strip()
+    user = _get_user(username)
+    if not user or user.get("password") != password:
+        return jsonify({"error": "Invalid username or password."}), 401
+    return jsonify({"username": user["username"], "tests": user.get("tests", [])})
+
+@app.get("/api/dashboard")
+def dashboard():
+    username = request.args.get("username", "").strip()
+    user = _get_user(username)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+    tests = user.get("tests", [])
+    attempted = len(tests)
+    average = 0
+    if attempted:
+        average = round(sum((t.get("score", 0) / max(1, t.get("max_score", 1))) * 100 for t in tests) / attempted, 1)
+    return jsonify({
+        "username": username,
+        "attempted": attempted,
+        "average": average,
+        "study_percentage": average,
+        "recent_tests": tests[-5:],
+        "planner": {
+            "recommended_focus": "Review weak topics from your last quizzes and practice more questions.",
+            "next_step": "Try another quiz on a subject you missed.",
+        },
+    })
 
 @app.get("/api/demo")
 def demo():

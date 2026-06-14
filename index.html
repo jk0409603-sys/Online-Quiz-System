@@ -18,26 +18,46 @@
 </head>
 <body>
   <main class="wrap">
-    <section class="card">
-      <h1>Online Quiz System</h1>
-      <p>Choose a topic, start a 5-question quiz, and get AI feedback.</p>
+    <section id="authSection" class="card">
+      <h1>Study Hub Login / Signup</h1>
+      <p>Sign in to track your tests, AI analysis, and progress planner.</p>
+      <div class="row">
+        <input id="username" placeholder="Username" />
+        <input id="password" type="password" placeholder="Password" />
+        <button id="loginBtn">Login</button>
+        <button id="signupBtn" class="btn secondary">Signup</button>
+      </div>
+      <p id="status" class="muted" style="margin-top:8px"></p>
+    </section>
+
+    <section id="dashboardSection" class="card hidden">
+      <h2>Dashboard</h2>
+      <p id="welcomeText" class="muted"></p>
+      <div id="dashboardSummary" class="score-box"></div>
+      <div id="plannerBox" style="margin-top:16px"></div>
+      <div id="recentTests" style="margin-top:16px"></div>
+      <button class="btn secondary" onclick="logout()">Logout</button>
+    </section>
+
+    <section id="quizSection" class="card hidden">
+      <h2>Start Quiz</h2>
+      <p class="muted">Choose a topic, difficulty, and see your AI feedback saved to your profile.</p>
       <div class="row">
         <input id="topic" placeholder="Enter a topic (e.g. Python, Biology, History)" />
         <select id="level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select>
         <button id="startBtn">Start Quiz</button>
       </div>
-      <p id="status" class="muted" style="margin-top:8px"></p>
     </section>
 
-    <section id="quizSection" class="card hidden">
-      <h2 id="qTitle">Question 1 of 5</h2>
+    <section id="questionSection" class="card hidden">
+      <h2 id="qTitle"></h2>
       <p id="qText"></p>
       <div id="options" class="options"></div>
       <button id="nextBtn">Next</button>
     </section>
 
     <section id="resultSection" class="card hidden">
-      <h2>Results</h2>
+      <h2>Quiz Result</h2>
       <p id="quizMeta" class="muted"></p>
       <p id="scoreText"></p>
       <p id="feedbackText"></p>
@@ -45,10 +65,21 @@
     </section>
   </main>
   <script>
-    const startBtn = document.getElementById('startBtn');
+    const loginBtn = document.getElementById('loginBtn');
+    const signupBtn = document.getElementById('signupBtn');
     const statusText = document.getElementById('status');
+    const authSection = document.getElementById('authSection');
+    const dashboardSection = document.getElementById('dashboardSection');
     const quizSection = document.getElementById('quizSection');
+    const questionSection = document.getElementById('questionSection');
     const resultSection = document.getElementById('resultSection');
+    const welcomeText = document.getElementById('welcomeText');
+    const dashboardSummary = document.getElementById('dashboardSummary');
+    const plannerBox = document.getElementById('plannerBox');
+    const recentTests = document.getElementById('recentTests');
+    const topicInput = document.getElementById('topic');
+    const levelSelect = document.getElementById('level');
+    const startBtn = document.getElementById('startBtn');
     const qTitle = document.getElementById('qTitle');
     const qText = document.getElementById('qText');
     const options = document.getElementById('options');
@@ -56,49 +87,141 @@
     const scoreText = document.getElementById('scoreText');
     const feedbackText = document.getElementById('feedbackText');
     const quizMeta = document.getElementById('quizMeta');
+    let username = localStorage.getItem('oqs_username') || '';
     let questions = [];
     let current = 0;
     let answers = [];
     let lastTopic = '';
     let lastLevel = '';
 
+    function setStatus(message) {
+      statusText.textContent = message;
+    }
+
+    function showSection(section) {
+      authSection.classList.toggle('hidden', section !== authSection);
+      dashboardSection.classList.toggle('hidden', section !== dashboardSection);
+      quizSection.classList.toggle('hidden', section !== quizSection);
+      questionSection.classList.toggle('hidden', section !== questionSection);
+      resultSection.classList.toggle('hidden', section !== resultSection);
+    }
+
+    function setVisibility({dashboard = false, quiz = false, questions = false, result = false}) {
+      authSection.classList.toggle('hidden', dashboard || quiz || questions || result);
+      dashboardSection.classList.toggle('hidden', !dashboard);
+      quizSection.classList.toggle('hidden', !quiz);
+      questionSection.classList.toggle('hidden', !questions);
+      resultSection.classList.toggle('hidden', !result);
+    }
+
+    async function loadDashboard() {
+      if (!username) return;
+      setStatus('Loading dashboard...');
+      try {
+        const res = await fetch(`/api/dashboard?username=${encodeURIComponent(username)}`);
+        const data = await res.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        welcomeText.textContent = `Welcome back, ${data.username}!`;
+        dashboardSummary.innerHTML = `
+          <div class="mini"><div class="tag">Tests</div><div>${data.attempted}</div></div>
+          <div class="mini"><div class="tag">Avg Score</div><div>${data.average}%</div></div>
+          <div class="mini"><div class="tag">Study Level</div><div>${data.study_percentage}%</div></div>
+        `;
+        plannerBox.innerHTML = `<div class="card"><h3>Study Planner</h3><p class="muted">${data.planner.recommended_focus}</p><p class="muted">Next step: ${data.planner.next_step}</p></div>`;
+        recentTests.innerHTML = `<h3>Recent Tests</h3>${data.recent_tests.length ? data.recent_tests.map(test => `<div class="mini"><div class="tag">${test.topic} • ${test.level}</div><div>${test.score}/${test.max_score} on ${new Date(test.date).toLocaleDateString()}</div><div class="muted">${test.feedback}</div></div>`).join('') : '<p class="muted">No tests taken yet.</p>'}`;
+        setVisibility({dashboard: true, quiz: true});
+      } catch (err) {
+        setStatus(`Dashboard error: ${err.message}`);
+      } finally {
+        if (!dashboardSection.classList.contains('hidden')) setStatus('');
+      }
+    }
+
+    async function submitAuth(type) {
+      const usernameInput = document.getElementById('username').value.trim();
+      const passwordInput = document.getElementById('password').value;
+      if (!usernameInput || !passwordInput) {
+        return setStatus('Enter username and password.');
+      }
+      setStatus(type === 'signup' ? 'Signing up...' : 'Logging in...');
+      try {
+        const res = await fetch(`/api/${type}`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({username: usernameInput, password: passwordInput}),
+        });
+        const data = await res.json();
+        if (res.status !== 200) {
+          throw new Error(data.error || 'Authentication failed');
+        }
+        username = data.username;
+        localStorage.setItem('oqs_username', username);
+        setStatus('');
+        await loadDashboard();
+      } catch (err) {
+        setStatus(err.message);
+      }
+    }
+
+    function logout() {
+      username = '';
+      localStorage.removeItem('oqs_username');
+      setVisibility({dashboard: false, quiz: false, questions: false, result: false});
+      authSection.classList.remove('hidden');
+      setStatus('Logged out.');
+    }
+
+    loginBtn.onclick = () => submitAuth('login');
+    signupBtn.onclick = () => submitAuth('signup');
+
     startBtn.onclick = async () => {
-      const topic = document.getElementById('topic').value.trim();
-      const level = document.getElementById('level').value;
-      if (!topic) return alert('Please enter a topic');
+      if (!username) {
+        setStatus('Please login first.');
+        return;
+      }
+      const topic = topicInput.value.trim();
+      const level = levelSelect.value;
+      if (!topic) {
+        setStatus('Enter a quiz topic.');
+        return;
+      }
       lastTopic = topic;
       lastLevel = level;
       startBtn.disabled = true;
-      statusText.textContent = 'Loading quiz...';
+      setStatus('Loading quiz...');
       try {
-        const res = await fetch('/start', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({topic, level, count: 10})});
+        const res = await fetch('/start', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({topic, level, count: 5}),
+        });
         const data = await res.json();
         questions = data.questions || [];
-        if (!questions.length) {
-          throw new Error('No questions returned from server');
-        }
+        if (!questions.length) throw new Error('No questions returned.');
         current = 0;
         answers = [];
-        statusText.textContent = '';
+        setStatus('');
+        questionSection.classList.remove('hidden');
         resultSection.classList.add('hidden');
-        quizSection.classList.remove('hidden');
         renderQuestion();
       } catch (err) {
-        statusText.textContent = 'Failed to load quiz. Try again.';
-        console.error(err);
+        setStatus(`Quiz load failed: ${err.message}`);
       } finally {
         startBtn.disabled = false;
       }
     };
 
     function renderQuestion() {
-      if (!questions[current]) return;
+      const question = questions[current];
+      if (!question) return;
       qTitle.textContent = `Question ${current + 1} of ${questions.length}`;
-      qText.textContent = questions[current].question;
+      qText.textContent = question.question;
       options.innerHTML = '';
-      questions[current].options.forEach((opt, idx) => {
+      question.options.forEach((opt, idx) => {
         const label = document.createElement('label');
-        label.innerHTML = `<input type="radio" name="opt" value="${opt}" ${idx===0?'checked':''}> ${opt}`;
+        label.innerHTML = `<input type="radio" name="opt" value="${opt}" ${idx === 0 ? 'checked' : ''}> ${opt}`;
         options.appendChild(label);
       });
     }
@@ -111,7 +234,7 @@
       feedbackText.textContent = '';
       quizMeta.textContent = `Topic: ${lastTopic} | Level: ${lastLevel}`;
       resultSection.classList.add('hidden');
-      quizSection.classList.remove('hidden');
+      questionSection.classList.remove('hidden');
       renderQuestion();
     }
 
@@ -123,23 +246,33 @@
         renderQuestion();
         return;
       }
-      quizSection.classList.add('hidden');
-      statusText.textContent = 'Submitting answers...';
+      questionSection.classList.add('hidden');
+      setStatus('Submitting answers...');
       try {
-        const res = await fetch('/answer', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({answers, questions})});
+        const res = await fetch('/answer', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({answers, questions, username, topic: lastTopic, level: lastLevel}),
+        });
         const data = await res.json();
         const score = data.score || questions.reduce((acc, q, i) => acc + (answers[i] === q.answer ? 1 : 0), 0);
         quizMeta.textContent = `Topic: ${lastTopic} | Level: ${lastLevel}`;
         scoreText.textContent = `Score: ${score} / ${questions.length}`;
         feedbackText.textContent = data.feedback || 'Great effort!';
         resultSection.classList.remove('hidden');
+        await loadDashboard();
       } catch (err) {
-        statusText.textContent = 'Failed to submit answers. Try again.';
-        console.error(err);
+        setStatus(`Submission failed: ${err.message}`);
       } finally {
-        statusText.textContent = '';
+        setStatus('');
       }
     };
+
+    if (username) {
+      authSection.classList.add('hidden');
+      loadDashboard();
+    }
   </script>
 </body>
 </html>
+
