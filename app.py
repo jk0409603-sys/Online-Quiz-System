@@ -2,8 +2,10 @@ import os
 from collections import Counter
 from pathlib import Path
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template_string, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
+from generate_questions import generate_quiz_questions
+from analysis import analyze_answers
 
 load_dotenv()
 
@@ -960,12 +962,30 @@ fetch("/api/analytics").then(r=>r.json()).then(data=>{document.getElementById("a
 
 @app.get("/")
 def index():
-    return render_template_string(HTML)
+    return send_from_directory(BASE_DIR, "index.html")
 
 @app.get("/api/health")
 def health():
     q = sum(1 for _ in DATA_FILE.open("r", encoding="utf-8")) if DATA_FILE.exists() else 0
     return jsonify({"status": "ok", "questions": q, "azure_openai": OPENAI_OK, "azure_language": LANGUAGE_OK})
+
+@app.post("/start")
+def start():
+    data = request.get_json(silent=True) or {}
+    topic = (data.get("topic") or "General Knowledge").strip()
+    level = (data.get("level") or "Beginner").strip()
+    count = int(data.get("count") or 10)
+    questions = generate_quiz_questions(topic, level=level, count=count)
+    return jsonify({"topic": topic, "level": level, "questions": questions})
+
+@app.post("/answer")
+def answer():
+    data = request.get_json(silent=True) or {}
+    answers = data.get("answers", [])
+    questions = data.get("questions", [])
+    score = sum(1 for q, a in zip(questions, answers) if a == q.get("answer"))
+    feedback = analyze_answers(answers)
+    return jsonify({"score": score, "feedback": feedback, "answers": answers})
 
 @app.get("/api/demo")
 def demo():

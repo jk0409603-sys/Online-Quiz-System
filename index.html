@@ -26,6 +26,7 @@
         <select id="level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select>
         <button id="startBtn">Start Quiz</button>
       </div>
+      <p id="status" class="muted" style="margin-top:8px"></p>
     </section>
 
     <section id="quizSection" class="card hidden">
@@ -37,12 +38,15 @@
 
     <section id="resultSection" class="card hidden">
       <h2>Results</h2>
+      <p id="quizMeta" class="muted"></p>
       <p id="scoreText"></p>
       <p id="feedbackText"></p>
+      <button class="btn" onclick="retryQuiz()">Retry Same Quiz</button>
     </section>
   </main>
   <script>
     const startBtn = document.getElementById('startBtn');
+    const statusText = document.getElementById('status');
     const quizSection = document.getElementById('quizSection');
     const resultSection = document.getElementById('resultSection');
     const qTitle = document.getElementById('qTitle');
@@ -51,22 +55,40 @@
     const nextBtn = document.getElementById('nextBtn');
     const scoreText = document.getElementById('scoreText');
     const feedbackText = document.getElementById('feedbackText');
+    const quizMeta = document.getElementById('quizMeta');
     let questions = [];
     let current = 0;
     let answers = [];
+    let lastTopic = '';
+    let lastLevel = '';
 
     startBtn.onclick = async () => {
       const topic = document.getElementById('topic').value.trim();
       const level = document.getElementById('level').value;
       if (!topic) return alert('Please enter a topic');
-      const res = await fetch('/start', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({topic, level, count: 10, rounds: 5})});
-      const data = await res.json();
-      questions = data.rounds?.[0]?.questions || data.questions || [];
-      current = 0;
-      answers = [];
-      resultSection.classList.add('hidden');
-      quizSection.classList.remove('hidden');
-      renderQuestion();
+      lastTopic = topic;
+      lastLevel = level;
+      startBtn.disabled = true;
+      statusText.textContent = 'Loading quiz...';
+      try {
+        const res = await fetch('/start', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({topic, level, count: 10})});
+        const data = await res.json();
+        questions = data.questions || [];
+        if (!questions.length) {
+          throw new Error('No questions returned from server');
+        }
+        current = 0;
+        answers = [];
+        statusText.textContent = '';
+        resultSection.classList.add('hidden');
+        quizSection.classList.remove('hidden');
+        renderQuestion();
+      } catch (err) {
+        statusText.textContent = 'Failed to load quiz. Try again.';
+        console.error(err);
+      } finally {
+        startBtn.disabled = false;
+      }
     };
 
     function renderQuestion() {
@@ -81,6 +103,18 @@
       });
     }
 
+    function retryQuiz() {
+      if (!questions.length) return;
+      current = 0;
+      answers = [];
+      scoreText.textContent = '';
+      feedbackText.textContent = '';
+      quizMeta.textContent = `Topic: ${lastTopic} | Level: ${lastLevel}`;
+      resultSection.classList.add('hidden');
+      quizSection.classList.remove('hidden');
+      renderQuestion();
+    }
+
     nextBtn.onclick = async () => {
       const chosen = document.querySelector('input[name="opt"]:checked')?.value;
       answers.push(chosen || '');
@@ -90,12 +124,21 @@
         return;
       }
       quizSection.classList.add('hidden');
-      const res = await fetch('/answer', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({answers})});
-      const data = await res.json();
-      const score = questions.reduce((acc, q, i) => acc + (answers[i] === q.answer ? 1 : 0), 0);
-      scoreText.textContent = `Score: ${score} / ${questions.length}`;
-      feedbackText.textContent = data.feedback || 'Great effort!';
-      resultSection.classList.remove('hidden');
+      statusText.textContent = 'Submitting answers...';
+      try {
+        const res = await fetch('/answer', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({answers, questions})});
+        const data = await res.json();
+        const score = data.score || questions.reduce((acc, q, i) => acc + (answers[i] === q.answer ? 1 : 0), 0);
+        quizMeta.textContent = `Topic: ${lastTopic} | Level: ${lastLevel}`;
+        scoreText.textContent = `Score: ${score} / ${questions.length}`;
+        feedbackText.textContent = data.feedback || 'Great effort!';
+        resultSection.classList.remove('hidden');
+      } catch (err) {
+        statusText.textContent = 'Failed to submit answers. Try again.';
+        console.error(err);
+      } finally {
+        statusText.textContent = '';
+      }
     };
   </script>
 </body>
