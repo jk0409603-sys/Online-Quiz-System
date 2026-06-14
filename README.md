@@ -26,7 +26,7 @@
 
 ## DEMO 
 
-![demo](https://<video controls src="bandicam 2026-06-14 11-34-23-339.mp4" title="Title"></video>))
+![demo](docs/video/<video controls src="bandicam 2026-06-14 11-34-23-339.mp4" title="Title"></video)
 
 
 
