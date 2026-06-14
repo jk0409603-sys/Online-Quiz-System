@@ -10,16 +10,25 @@
 
 ## 📸 Screenshots
 
+###LOGIN page
+![LOGIN page](docs/images/![alt text](<Screenshot 2026-06-14 114251.png>))
+
 ### Main Dashboard
-![Main Dashboard](docs/images/screenshot1.png)
+![Main Dashboard](docs/images/![alt text](<Screenshot 2026-06-14 114315.png>))
 
 ### Quiz Section — Choose Subject & Level
-![Quiz Section](docs/images/screenshot2.png)
+![Quiz Section](docs/images/![alt text](<Screenshot 2026-06-14 114334.png>))
 
 ### Analyse Your Answers — AI Weak Topic Detection
-![Analyse Answers](docs/images/screenshot3.png)
+![Analyse Answers](docs/images/![alt text](<Screenshot 2026-06-14 114354.png>))
 
 ---
+
+## DEMO 
+
+https://<video controls src="bandicam 2026-06-14 11-34-23-339.mp4" title="Title"></video>
+
+
 
 ## 🚩 The Problem
 
@@ -148,7 +157,7 @@ Online-Quiz-System/
 BS Information Technology — 1st Year (Completed)  
 Bahauddin Zakariya University, Pakistan  
 
-- 🏆 GPA 4.0 in OOP and C++ (First Year)
+- 🏆 GPA 4.0 in OOP and C++ (First Year) | know javascript very well | learning pyton |
 - 💻 Built this entire project solo in just **4 days**
 - 🎯 Passionate about using AI to make education accessible in Pakistan
 
