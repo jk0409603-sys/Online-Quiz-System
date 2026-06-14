@@ -101,7 +101,7 @@ cp .env.example .env
 python app.py
 
 # 5. Open in browser
-http://localhost:5000
+https://online-quiz-system-jr8q.onrender.com
 ```
 
 ---
