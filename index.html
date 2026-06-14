@@ -16,6 +16,11 @@
     .score-box { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
     .mini { background: #111827; border: 1px solid #1f2937; padding: 14px; border-radius: 12px; min-width: 140px; }
     .tag { color: #bfdbfe; font-size: 12px; text-transform: uppercase; margin-bottom: 6px; display: block; }
+    .subject-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 12px; }
+    .subject-card { background: #0f172a; border: 1px solid #334155; border-radius: 16px; padding: 16px; }
+    .subject-card h3 { margin-top: 0; margin-bottom: 12px; }
+    .subject-card button { width: 100%; margin-bottom: 8px; }
+    .prompt-box { margin-top: 14px; }
     .row { display: grid; gap: 10px; }
     .options label { display: block; background: #111827; border: 1px solid #334155; border-radius: 10px; padding: 10px; margin: 8px 0; }
     .hidden { display: none; }
@@ -41,28 +46,49 @@
       <div id="dashboardSummary" class="score-box"></div>
       <div id="plannerBox" style="margin-top:16px"></div>
       <div id="recentTests" style="margin-top:16px"></div>
-      <button class="btn secondary" onclick="logout()">Logout</button>
-    </section>
-
-    <section id="quizSection" class="card hidden">
-      <h2>Start Quiz</h2>
-      <p class="muted">Choose a topic, difficulty, and see your AI feedback saved to your profile.</p>
-      <div class="row">
-        <input id="topic" placeholder="Enter a topic (e.g. Python, Biology, History)" />
+      <div class="subject-grid" style="margin-top:24px;">
+        <div class="subject-card">
+          <h3>Python</h3>
+          <button onclick="startQuiz('Python','Beginner')">Easy</button>
+          <button onclick="startQuiz('Python','Intermediate')">Medium</button>
+          <button onclick="startQuiz('Python','Advanced')">Hard</button>
+        </div>
+        <div class="subject-card">
+          <h3>Programming Basics</h3>
+          <button onclick="startQuiz('Programming Basics','Beginner')">Easy</button>
+          <button onclick="startQuiz('Programming Basics','Intermediate')">Medium</button>
+          <button onclick="startQuiz('Programming Basics','Advanced')">Hard</button>
+        </div>
+        <div class="subject-card">
+          <h3>Mathematics</h3>
+          <button onclick="startQuiz('Mathematics','Beginner')">Easy</button>
+          <button onclick="startQuiz('Mathematics','Intermediate')">Medium</button>
+          <button onclick="startQuiz('Mathematics','Advanced')">Hard</button>
+        </div>
+        <div class="subject-card">
+          <h3>Data Structures</h3>
+          <button onclick="startQuiz('Data Structures','Beginner')">Easy</button>
+          <button onclick="startQuiz('Data Structures','Intermediate')">Medium</button>
+          <button onclick="startQuiz('Data Structures','Advanced')">Hard</button>
+        </div>
+      </div>
+      <div class="subject-card" style="margin-top:16px;">
+        <h3>Custom Topic</h3>
+        <input id="topic" placeholder="Enter a custom topic" />
         <select id="level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select>
-        <button id="startBtn">Start Quiz</button>
+        <button id="startBtn">Start Custom Quiz</button>
       </div>
-    </section>
-
-    <section id="aiAssistSection" class="card">
-      <h2>Talk to AI Study Coach</h2>
-      <p class="muted">Ask the AI for a study plan, topic review, or exam prep advice.</p>
-      <textarea id="aiPrompt" placeholder="Ask for a study plan, topic summary, or learning strategy..."></textarea>
-      <div class="row">
-        <button id="studyPlanBtn">Get AI Study Plan</button>
-        <button id="talkAiBtn" class="btn secondary">Talk to AI</button>
+      <div class="card" style="margin-top:20px; background: rgba(15,23,42,0.95);">
+        <h3>Talk to AI Study Coach</h3>
+        <p class="muted">Ask the AI for a study plan, topic summary, or exam review guidance.</p>
+        <textarea id="aiPrompt" placeholder="Ask for a study plan, topic summary, or learning strategy..."></textarea>
+        <div class="row prompt-box">
+          <button id="studyPlanBtn">Get AI Study Plan</button>
+          <button id="talkAiBtn" class="btn secondary">Talk to AI</button>
+        </div>
+        <div id="aiResponse" class="card" style="margin-top:16px; background: rgba(15,23,42,0.95);"></div>
       </div>
-      <div id="aiResponse" class="card" style="margin-top:16px; background: rgba(15,23,42,0.95);"></div>
+      <button class="btn secondary" onclick="logout()" style="margin-top:20px;">Logout</button>
     </section>
 
     <section id="questionSection" class="card hidden">
@@ -93,6 +119,7 @@
     const dashboardSummary = document.getElementById('dashboardSummary');
     const plannerBox = document.getElementById('plannerBox');
     const recentTests = document.getElementById('recentTests');
+    const aiAssistSection = document.getElementById('aiAssistSection');
     const topicInput = document.getElementById('topic');
     const levelSelect = document.getElementById('level');
     const startBtn = document.getElementById('startBtn');
@@ -126,12 +153,13 @@
       resultSection.classList.toggle('hidden', section !== resultSection);
     }
 
-    function setVisibility({dashboard = false, quiz = false, questions = false, result = false}) {
-      authSection.classList.toggle('hidden', dashboard || quiz || questions || result);
+    function setVisibility({dashboard = false, quiz = false, questions = false, result = false, ai = false}) {
+      authSection.classList.toggle('hidden', dashboard || quiz || questions || result || ai);
       dashboardSection.classList.toggle('hidden', !dashboard);
       quizSection.classList.toggle('hidden', !quiz);
       questionSection.classList.toggle('hidden', !questions);
       resultSection.classList.toggle('hidden', !result);
+      aiAssistSection.classList.toggle('hidden', !ai);
     }
 
     async function loadDashboard() {
@@ -145,13 +173,13 @@
         }
         welcomeText.textContent = `Welcome back, ${data.username}!`;
         dashboardSummary.innerHTML = `
-          <div class="mini"><div class="tag">Tests</div><div>${data.attempted}</div></div>
+          <div class="mini"><div class="tag">Attempted</div><div>${data.attempted}</div></div>
           <div class="mini"><div class="tag">Avg Score</div><div>${data.average}%</div></div>
           <div class="mini"><div class="tag">Study Level</div><div>${data.study_percentage}%</div></div>
         `;
         plannerBox.innerHTML = `<div class="card"><h3>Study Planner</h3><p class="muted">${data.planner.recommended_focus}</p><p class="muted">Next step: ${data.planner.next_step}</p></div>`;
         recentTests.innerHTML = `<h3>Recent Tests</h3>${data.recent_tests.length ? data.recent_tests.map(test => `<div class="mini"><div class="tag">${test.topic} • ${test.level}</div><div>${test.score}/${test.max_score} on ${new Date(test.date).toLocaleDateString()}</div><div class="muted">${test.feedback}</div></div>`).join('') : '<p class="muted">No tests taken yet.</p>'}`;
-        setVisibility({dashboard: true, quiz: true});
+        setVisibility({dashboard: true, quiz: true, ai: true});
       } catch (err) {
         setStatus(`Dashboard error: ${err.message}`);
       } finally {
@@ -188,7 +216,7 @@
     function logout() {
       username = '';
       localStorage.removeItem('oqs_username');
-      setVisibility({dashboard: false, quiz: false, questions: false, result: false});
+      setVisibility({dashboard: false, quiz: false, questions: false, result: false, ai: false});
       authSection.classList.remove('hidden');
       setStatus('Logged out.');
     }
@@ -196,15 +224,9 @@
     loginBtn.onclick = () => submitAuth('login');
     signupBtn.onclick = () => submitAuth('signup');
 
-    startBtn.onclick = async () => {
+    async function startQuiz(topic, level) {
       if (!username) {
         setStatus('Please login first.');
-        return;
-      }
-      const topic = topicInput.value.trim();
-      const level = levelSelect.value;
-      if (!topic) {
-        setStatus('Enter a quiz topic.');
         return;
       }
       lastTopic = topic;
@@ -231,7 +253,18 @@
       } finally {
         startBtn.disabled = false;
       }
+    }
+
+    startBtn.onclick = () => {
+      const topic = topicInput.value.trim();
+      const level = levelSelect.value;
+      if (!topic) {
+        setStatus('Enter a quiz topic.');
+        return;
+      }
+      startQuiz(topic, level);
     };
+
 
     function renderQuestion() {
       const question = questions[current];
