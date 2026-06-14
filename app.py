@@ -1096,6 +1096,43 @@ def analyze():
     advice = f"Review these topics: {', '.join(detected)}." if detected else "Keep practising regularly."
     return jsonify({"weak_topics": detected, "advice": advice, "source": "fallback"})
 
+@app.post("/api/study-plan")
+def study_plan():
+    data = request.get_json(silent=True) or {}
+    prompt = (data.get("prompt") or "").strip()
+    if not prompt:
+        return jsonify({"error": "Please provide a prompt for the AI study coach."}), 400
+
+    keywords = [
+        "python", "loops", "functions", "recursion", "arrays", "classes", "oop",
+        "algorithms", "data structures", "sorting", "math", "database", "security",
+    ]
+    found = [k for k in keywords if k in prompt.lower()]
+    if not found:
+        found = ["general IT study topics"]
+
+    plan_topics = ", ".join(found)
+    study_plan_text = (
+        f"AI Study Plan for {plan_topics}:\n"
+        "1. Review the core concepts and definitions.\n"
+        "2. Practice 5 targeted questions for each topic.\n"
+        "3. Write a short summary of mistakes.\n"
+        "4. Repeat the hardest topic tomorrow.\n"
+        "5. Use quick examples to build confidence."
+    )
+    response_text = (
+        f"Here is a study plan focused on {plan_topics}.\n" + study_plan_text
+        if "plan" in prompt.lower() or "study" in prompt.lower()
+        else f"I can help you practice {plan_topics}. Ask me for a summary, quiz tips, or a review plan."
+    )
+    advice = "Focus on one topic at a time and review short examples."
+    return jsonify({
+        "response": response_text,
+        "study_plan": study_plan_text,
+        "advice": advice,
+        "source": "fallback",
+    })
+
 @app.get("/api/analytics")
 def analytics():
     question_count = sum(1 for _ in DATA_FILE.open("r", encoding="utf-8")) if DATA_FILE.exists() else 0

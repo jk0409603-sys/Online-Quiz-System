@@ -9,8 +9,13 @@
     body { margin: 0; background: linear-gradient(135deg, #0f172a, #111827); color: #e5eefb; }
     .wrap { max-width: 980px; margin: 0 auto; padding: 24px; }
     .card { background: rgba(15,23,42,0.9); border: 1px solid #334155; border-radius: 18px; padding: 18px; box-shadow: 0 20px 35px rgba(0,0,0,0.25); }
-    input, button, select { width: 100%; box-sizing: border-box; padding: 12px; border-radius: 12px; border: 1px solid #475569; font-size: 1rem; }
+    input, button, select, textarea { width: 100%; box-sizing: border-box; padding: 12px; border-radius: 12px; border: 1px solid #475569; font-size: 1rem; background: #0f172a; color: #e5eefb; }
+    textarea { min-height: 120px; resize: vertical; }
     button { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; cursor: pointer; font-weight: 700; }
+    .btn.secondary { background: linear-gradient(135deg, #f59e0b, #f97316); }
+    .score-box { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+    .mini { background: #111827; border: 1px solid #1f2937; padding: 14px; border-radius: 12px; min-width: 140px; }
+    .tag { color: #bfdbfe; font-size: 12px; text-transform: uppercase; margin-bottom: 6px; display: block; }
     .row { display: grid; gap: 10px; }
     .options label { display: block; background: #111827; border: 1px solid #334155; border-radius: 10px; padding: 10px; margin: 8px 0; }
     .hidden { display: none; }
@@ -47,6 +52,17 @@
         <select id="level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select>
         <button id="startBtn">Start Quiz</button>
       </div>
+    </section>
+
+    <section id="aiAssistSection" class="card">
+      <h2>Talk to AI Study Coach</h2>
+      <p class="muted">Ask the AI for a study plan, topic review, or exam prep advice.</p>
+      <textarea id="aiPrompt" placeholder="Ask for a study plan, topic summary, or learning strategy..."></textarea>
+      <div class="row">
+        <button id="studyPlanBtn">Get AI Study Plan</button>
+        <button id="talkAiBtn" class="btn secondary">Talk to AI</button>
+      </div>
+      <div id="aiResponse" class="card" style="margin-top:16px; background: rgba(15,23,42,0.95);"></div>
     </section>
 
     <section id="questionSection" class="card hidden">
@@ -87,6 +103,10 @@
     const scoreText = document.getElementById('scoreText');
     const feedbackText = document.getElementById('feedbackText');
     const quizMeta = document.getElementById('quizMeta');
+    const aiPrompt = document.getElementById('aiPrompt');
+    const aiResponse = document.getElementById('aiResponse');
+    const studyPlanBtn = document.getElementById('studyPlanBtn');
+    const talkAiBtn = document.getElementById('talkAiBtn');
     let username = localStorage.getItem('oqs_username') || '';
     let questions = [];
     let current = 0;
@@ -238,6 +258,37 @@
       renderQuestion();
     }
 
+    async function sendAiRequest(mode) {
+      const prompt = aiPrompt.value.trim();
+      if (!prompt) {
+        return setStatus('Write a prompt for the AI study coach.');
+      }
+      setStatus('Talking to AI...');
+      try {
+        const res = await fetch('/api/study-plan', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({prompt}),
+        });
+        const data = await res.json();
+        if (res.status !== 200) {
+          throw new Error(data.error || 'AI request failed');
+        }
+        aiResponse.innerHTML = `
+          <h3>${mode === 'plan' ? 'AI Study Plan' : 'AI Coach Response'}</h3>
+          <p>${data.response.replace(/\n/g, '<br>')}</p>
+          <p class="muted">${data.advice}</p>
+        `;
+      } catch (err) {
+        setStatus(err.message);
+      } finally {
+        setStatus('');
+      }
+    }
+
+    studyPlanBtn.onclick = () => sendAiRequest('plan');
+    talkAiBtn.onclick = () => sendAiRequest('chat');
+
     nextBtn.onclick = async () => {
       const chosen = document.querySelector('input[name="opt"]:checked')?.value;
       answers.push(chosen || '');
@@ -275,4 +326,3 @@
   </script>
 </body>
 </html>
-
