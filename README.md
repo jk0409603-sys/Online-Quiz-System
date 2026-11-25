@@ -166,6 +166,16 @@ GROQ_API_KEY=
 
 Use your own credentials locally. Do not include real keys in this README.
 
+### C++ Admin Login Configuration
+
+The C++ console application reads its admin credentials from `admin.conf` in the
+repository root. Copy `admin.conf.example` to `admin.conf` and set a local
+username and password. The example's active values are blank, so admin login
+remains disabled until configured. `admin.conf` is ignored by Git. If the file
+is missing or malformed, admin login is disabled while student features remain
+available. Run the application from the repository root so it can find this
+file and the quiz data.
+
 ## 📁 Project Structure
 
 ```text

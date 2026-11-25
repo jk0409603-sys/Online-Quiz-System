@@ -1,0 +1,7 @@
+# Copy this file to admin.conf and replace the placeholders.
+# The empty active values intentionally keep admin login disabled until configured.
+# Example only: do not use these placeholder values as credentials.
+# username=YOUR_ADMIN_USERNAME
+# password=REPLACE_WITH_A_STRONG_LOCAL_PASSWORD
+username=
+password=

@@ -2,6 +2,7 @@ quiz_app
 users.txt
 results.txt
 .env
+admin.conf
 __pycache__/
 *.pyc
 .pytest_cache/

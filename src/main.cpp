@@ -90,12 +90,6 @@ string extractAiText(const string &body)
 }
 
 
-
-
-  
- 
-
-
 string getMaskedPassword(const string &prompt = "  Password: ")
 {
 #ifdef _WIN32
@@ -917,6 +911,60 @@ public:
     }
 };
 
+struct AdminCredentials
+{
+    string username;
+    string password;
+    bool configured = false;
+};
+
+AdminCredentials loadAdminCredentials()
+{
+    AdminCredentials credentials;
+    ifstream file("admin.conf");
+    if (!file.is_open())
+        return credentials;
+
+    bool usernameFound = false;
+    bool passwordFound = false;
+    string line;
+    while (getline(file, line))
+    {
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
+        if (line.empty() || line[0] == '#')
+            continue;
+
+        size_t separator = line.find('=');
+        if (separator == string::npos)
+            return credentials;
+
+        string key = line.substr(0, separator);
+        string value = line.substr(separator + 1);
+        if (key == "username" && !usernameFound)
+        {
+            credentials.username = value;
+            usernameFound = true;
+        }
+        else if (key == "password" && !passwordFound)
+        {
+            credentials.password = value;
+            passwordFound = true;
+        }
+        else
+        {
+            return credentials;
+        }
+    }
+
+    if (file.bad() || !usernameFound || !passwordFound ||
+        credentials.username.empty() || credentials.password.empty())
+        return credentials;
+
+    credentials.configured = true;
+    return credentials;
+}
+
 int main()
 {
 
@@ -945,8 +993,7 @@ int main()
     cout << "          Welcome to the Portal!        " << endl;
     cout << " ========================================" << endl;
 
-    const string ADMIN_USER = "admin";
-    const string ADMIN_PASS = "admin123";
+    const AdminCredentials adminCredentials = loadAdminCredentials();
 
     int mainChoice;
     do
@@ -1101,7 +1148,9 @@ int main()
             getline(cin, username);
             password = getMaskedPassword();
 
-            if (username == ADMIN_USER && password == ADMIN_PASS)
+            if (adminCredentials.configured &&
+                username == adminCredentials.username &&
+                password == adminCredentials.password)
             {
                 clearScreen();
                 int adminChoice;
@@ -1151,6 +1200,10 @@ int main()
 
                 } while (adminChoice != 3);
             }
+            else if (!adminCredentials.configured)
+            {
+                cout << "\n  Admin login is disabled: admin.conf is missing or invalid.\n";
+            }
             else
             {
                 cout << "\n  Invalid admin credentials!\n";
@@ -1163,7 +1216,8 @@ int main()
             cout << "  Username: ";
             getline(cin, newUser);
 
-            if (newUser == ADMIN_USER)
+            if (!adminCredentials.username.empty() &&
+                newUser == adminCredentials.username)
             {
                 cout << "  This username is reserved. Choose another.\n";
             }
