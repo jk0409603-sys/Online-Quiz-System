@@ -1,176 +1,240 @@
 # 🎓 Adaptive IT Learning Hub — Online Quiz System
 
-> **Microsoft Hackathon 2026 Submission**  
-> Built by **Wajiha Imran** · Bahauddin Zakariya University · BS IT 1st Year (Completed) · GPA 4.0  
-> 🏆 Built solo in just **4 days**
+A quiz and learning-support project developed to help students practice programming, computer science, and academic topics through interactive quizzes and performance feedback.
 
-🌐 **Live Demo:** [https://online-quiz-system-jr8q.onrender.com](https://online-quiz-system-jr8q.onrender.com)
+This repository contains two implementations:
 
----
+- A **C++ terminal-based quiz application**
+- A **Python Flask web-based quiz application**
 
-## 📸 Screenshots
+## 📌 Project Overview
 
-###LOGIN page
-![LOGIN page](docs/images/![alt text](<Screenshot 2026-06-14 114251.png>))
+The Online Quiz System provides students with an interactive way to practice multiple-choice questions, check their performance, and identify topics that need further revision.
 
-### Main Dashboard
-![Main Dashboard](docs/images/![alt text](<Screenshot 2026-06-14 114315.png>))
-
-### Quiz Section — Choose Subject & Level
-![Quiz Section](docs/images/![alt text](<Screenshot 2026-06-14 114334.png>))
-
-### Analyse Your Answers — AI Weak Topic Detection
-![Analyse Answers](docs/images/![alt text](<Screenshot 2026-06-14 114354.png>))
-
----
-
-## DEMO 
-
-![demo](docs/video/<video controls src="bandicam 2026-06-14 11-34-23-339.mp4" title="Title"></video)
-
-
-
-## 🚩 The Problem
-
-Students in Pakistan — especially in smaller cities — have **no access to personalised exam prep**. Coaching is expensive, and generic quizzes don't tell you *what* to fix. This project solves that.
-
----
-
-## 💡 The Solution
-
-**Adaptive IT Learning Hub** is an AI-powered quiz platform that:
-- 🧠 Generates **personalised study recommendations** using Azure OpenAI
-- 🔍 Detects **weak topics** from student answers using Azure AI Language
-- 📝 Offers **4 subjects × 3 difficulty levels × 10 questions** each
-- 🌐 Supports **Urdu and English** so no student is left behind
-- 📊 Shows **teacher analytics** — sessions, questions, weak topic patterns
-
----
-
-## 🤖 Microsoft Azure AI Integration
-
-| Service | How it's used |
-|---|---|
-| **Azure OpenAI (gpt-4o-mini)** | Generates adaptive study insights personalised per student |
-| **Azure AI Language** | Extracts key phrases from answers to detect weak topics |
-
----
-
-## 🛠️ Tech Stack
-
-![Python](https://img.shields.io/badge/Python-3.11-blue?style=flat-square&logo=python)
-![Flask](https://img.shields.io/badge/Flask-3.0-black?style=flat-square&logo=flask)
-![Azure OpenAI](https://img.shields.io/badge/Azure_OpenAI-gpt--4o--mini-0078d4?style=flat-square&logo=microsoftazure)
-![Azure AI Language](https://img.shields.io/badge/Azure_AI-Language-0078d4?style=flat-square&logo=microsoftazure)
-![C++](https://img.shields.io/badge/C++-Core_Engine-00599C?style=flat-square&logo=cplusplus)
-![Render](https://img.shields.io/badge/Deployed-Render-46E3B7?style=flat-square&logo=render)
-
----
+The project explores how programming fundamentals, file handling, web development, and AI services can be combined to support learning.
 
 ## ✨ Features
 
-- 🧠 **AI-generated adaptive insights** — tells students exactly what to revise
-- 🔍 **Weak topic detection** — paste your answers, get instant AI feedback
-- 📝 **Quiz system** — 4 subjects, 3 difficulty levels, 10 questions each
-  - Python (Beginner / Intermediate / Advanced)
-  - Programming Basics (Beginner / Intermediate / Advanced)
-  - Mathematics (Beginner / Intermediate / Advanced)
-  - Data Structures (Beginner / Intermediate / Advanced)
-- 📊 **Teacher analytics dashboard** — sessions, questions, top weak topics
-- 🌐 **Urdu / English toggle** — full bilingual UI
-- ⚡ **Fallback mode** — works even without API keys (no crashes)
-- 📁 **C++ quiz engine** — core logic built from scratch
+### C++ Terminal Quiz Application
 
----
+- Student registration and login
+- Admin login and management menu
+- Multiple quiz categories
+- Multiple-choice questions
+- Score calculation and result display
+- Student result history
+- Recent performance chart
+- Diagnostic feedback on incorrect answers
+- Question hints
+- Optional AI-generated hints and personalized study roadmap
 
-## 🚀 Setup & Run Locally
+### Flask Web Application
+
+- Browser-based quiz interface
+- Subject and difficulty selection
+- Quiz questions with multiple-choice options
+- Score calculation and feedback
+- Urdu / English interface toggle
+- Quiz generation through the Flask backend
+- Answer analysis and study feedback
+- Student account and dashboard API
+- Analytics snapshot
+
+## 📚 Quiz Categories
+
+The C++ terminal version includes:
+
+- Python Programming
+- Mathematics
+- Programming Basics
+- Calculus
+- English
+
+The web interface includes practice quizzes for:
+
+- Python
+- Programming Basics
+- Mathematics
+- Data Structures
+
+The web interface provides Beginner, Intermediate, and Advanced levels, with 10 questions in each displayed quiz.
+
+## 🤖 AI Integration
+
+The project includes optional AI integrations:
+
+| Service | Purpose |
+|---|---|
+| Azure OpenAI | Generates quiz questions when configured |
+| Azure AI Language | Extracts key phrases from submitted answers for analysis |
+| Groq API | Supports AI-generated hints and study-roadmap features in the C++ application |
+
+The web question generator includes fallback questions when Azure OpenAI is unavailable.
+
+Some analysis and demo endpoints currently use fallback logic, so AI-based feedback may vary depending on the configured service and endpoint.
+
+## 🛠️ Technologies Used
+
+- C++
+- Python
+- Flask
+- HTML
+- CSS
+- JavaScript
+- Azure OpenAI
+- Azure AI Language
+- Groq API
+- File-based data storage
+
+## 🚀 Run the Flask Web Application
+
+### Prerequisites
+
+- Python 3
+- pip
+- Git
+
+### 1. Clone the repository
 
 ```bash
-# 1. Clone the repo
 git clone https://github.com/jk0409603-sys/Online-Quiz-System.git
 cd Online-Quiz-System
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Create .env file
-cp .env.example .env
-# Add your Azure keys to .env
-
-# 4. Run the app
-python app.py
-
-# 5. Open in browser
-https://online-quiz-system-jr8q.onrender.com
 ```
 
----
+### 2. Create a virtual environment
+
+```bash
+python -m venv .venv
+```
+
+Activate it on Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+Activate it on Linux or macOS:
+
+```bash
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure environment variables
+
+Create a local `.env` file using `.env.example` as a template.
+
+Add your own Azure credentials if you want to use the Azure AI features.
+
+Never upload API keys or passwords to GitHub.
+
+### 5. Start the application
+
+```bash
+python app.py
+```
+
+Open your browser at:
+
+```text
+http://127.0.0.1:5000
+```
 
 ## 🔑 Environment Variables
 
-Create a `.env` file in the root directory:
+The web application can use the following environment variables:
 
-```env
-AZURE_OPENAI_KEY=your_key_here
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
-AZURE_LANGUAGE_KEY=your_key_here
-AZURE_LANGUAGE_ENDPOINT=https://your-resource.cognitiveservices.azure.com/
+```text
+AZURE_OPENAI_KEY=
+AZURE_OPENAI_ENDPOINT=
+AZURE_OPENAI_DEPLOYMENT=
+
+AZURE_LANGUAGE_KEY=
+AZURE_LANGUAGE_ENDPOINT=
 ```
 
-> ⚠️ Never commit your `.env` file. It is already in `.gitignore`.
+The C++ application also supports:
 
----
+```text
+GROQ_API_KEY=
+```
+
+Use your own credentials locally. Do not include real keys in this README.
 
 ## 📁 Project Structure
 
-```
+```text
 Online-Quiz-System/
-├── app.py                  # Flask app + Azure AI routes + Quiz system
-├── generate_questions.py   # Question generator
-├── Code.cpp                # Core C++ quiz engine
-├── data/                   # Question bank
-├── docs/images/            # Screenshots
-├── history.txt             # Session history
-├── results.txt             # Quiz results
-├── requirements.txt        # Python dependencies
+│
+├── Code.cpp
+├── app.py
+├── app_flask.py
+├── index.html
+│
+├── analysis.py
+├── generate_questions.py
+│
+├── data/
+│   └── questions_db.txt
+│
+├── static/
+├── template/
+│
+├── requirements.txt
+├── .env.example
+├── .gitignore
 └── README.md
 ```
 
----
+## 🔌 Flask API
 
-## 🧪 API Endpoints
+The web backend includes endpoints for:
 
-| Endpoint | Method | Description |
+| Endpoint | Method | Purpose |
 |---|---|---|
-| `/` | GET | Main UI with quiz system |
-| `/api/health` | GET | Check Azure connection status |
-| `/api/demo` | GET | Get AI-generated adaptive insight |
-| `/api/analyze` | POST | Detect weak topics from answers |
-| `/api/analytics` | GET | Teacher analytics snapshot |
+| `/api/health` | GET | Check application status |
+| `/start` | POST | Generate quiz questions |
+| `/answer` | POST | Evaluate submitted answers |
+| `/api/signup` | POST | Register a student |
+| `/api/login` | POST | Authenticate a student |
+| `/api/dashboard` | GET | Retrieve student progress |
+| `/api/analyze` | POST | Analyze submitted answers |
+| `/api/study-plan` | POST | Generate study guidance |
+| `/api/analytics` | GET | Retrieve analytics data |
 
----
+## 🎯 Learning Outcomes
 
-## 👩‍💻 About the Developer
+Through this project, I practiced:
 
-**Wajiha Imran**  
-BS Information Technology — 1st Year (Completed)  
-Bahauddin Zakariya University, Pakistan  
+- C++ object-oriented programming
+- File handling and data management
+- User authentication logic
+- Quiz and scoring logic
+- Python backend development
+- Flask routes and JSON APIs
+- HTML, CSS, and JavaScript integration
+- Working with external AI APIs
+- Debugging and project organization
 
-- 🏆 GPA 4.0 in OOP and C++ (First Year) | know javascript very well | learning pyton |
-- 💻 Built this entire project solo in just **4 days**
-- 🎯 Passionate about using AI to make education accessible in Pakistan
+## 👩‍💻 Developer
 
----
+**Wajiha Imran**
 
-## 🎯 Impact
+BS Information Technology  
+Bahauddin Zakariya University, Pakistan
 
-> *"Every student in Pakistan deserves personalised learning — not just those who can afford coaching."*
+Interested in software development, problem-solving, and building technology that supports education.
 
-This tool is built for the **millions of IT students** across Pakistan who prepare for exams without guidance, without mentors, and without feedback on what they're actually getting wrong.
+## 🌱 Future Improvements
 
----
-
-## 📄 License
-
-MIT License — free to use, build on, and share.
+- Improve the connection between the frontend and backend quiz APIs
+- Strengthen authentication and password security
+- Improve persistent student progress tracking
+- Add more quiz categories and question banks
+- Improve AI feedback and weak-topic recommendations
+- Add automated tests and clearer setup instructions
